@@ -14,12 +14,12 @@ import java.awt.*;
 
 import static javax.swing.GroupLayout.*;
 
-public class Login extends RoundedJFrame {
+public class Register extends RoundedJFrame {
     // DEFINE VALUES
     private static final Font DEFAULT_FONT = new Font("Roboto", Font.PLAIN, 18);
     private static final Color DEFAULT_DARK_COLOR = new Color(82, 82, 82, 255);
 
-    public Login() {
+    public Register() {
         initComponents();
     }
 
@@ -87,12 +87,12 @@ public class Login extends RoundedJFrame {
         titleBar.add(btnClose, gbc);
         // =========================================================================
 
-        // =============================== LOGIN FORM ==============================
+        // ============================== REGISTER FORM ============================
         JLabel txtLogin = new JLabel();
         txtLogin.setFont(new Font("Roboto", Font.BOLD, 36));
         txtLogin.setForeground(DEFAULT_DARK_COLOR);
-        txtLogin.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        txtLogin.setText("Đăng nhập");
+        txtLogin.setHorizontalAlignment(SwingConstants.CENTER);
+        txtLogin.setText("Đăng ký");
 
         JLabel txtUsername = new JLabel();
         txtUsername.setFont(DEFAULT_FONT);
@@ -114,86 +114,102 @@ public class Login extends RoundedJFrame {
         edtPassword.setFont(DEFAULT_FONT);
         edtPassword.setForeground(DEFAULT_DARK_COLOR);
 
-        txtNotification = new javax.swing.JLabel();
+        JLabel txtConfirmPassword = new JLabel();
+        txtConfirmPassword.setFont(DEFAULT_FONT);
+        txtConfirmPassword.setForeground(DEFAULT_DARK_COLOR);
+        txtConfirmPassword.setText("Xác nhận mật khẩu");
+
+        edtConfirmPassword = new FlatPasswordInput();
+        edtConfirmPassword.setBackground(new Color(240, 240, 240));
+        edtConfirmPassword.setFont(DEFAULT_FONT);
+        edtConfirmPassword.setForeground(DEFAULT_DARK_COLOR);
+
+        txtNotification = new JLabel();
         txtNotification.setVisible(false);
         txtNotification.setFont(DEFAULT_FONT);
         txtNotification.setForeground(new Color(204, 0, 0));
-        txtNotification.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        txtNotification.setText("Lỗi đăng nhập #???");
+        txtNotification.setHorizontalAlignment(SwingConstants.CENTER);
+        txtNotification.setText("Lỗi đăng ký #???");
 
-        JButton btnLogin = new FlatButton();
-        btnLogin.setBackground(new Color(0, 102, 153));
-        btnLogin.setFont(DEFAULT_FONT);
-        btnLogin.setForeground(Color.WHITE);
-        btnLogin.setText("Đăng nhập");
-        btnLogin.setBorder(null);
+        JButton btnRegister = new FlatButton();
+        btnRegister.setBackground(new Color(0, 102, 153));
+        btnRegister.setFont(DEFAULT_FONT);
+        btnRegister.setForeground(Color.WHITE);
+        btnRegister.setText("Đăng ký");
+        btnRegister.setBorder(null);
 
-        JLabel txtGotoRegister = new JLabel();
-        txtGotoRegister.setFont(new Font("Roboto", Font.ITALIC, 16));
-        txtGotoRegister.setForeground(new Color(102, 102, 102));
-        txtGotoRegister.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        txtGotoRegister.setText("Đi đến đăng ký");
+        JLabel txtGotoLogin = new JLabel();
+        txtGotoLogin.setFont(new Font("Roboto", Font.ITALIC, 16));
+        txtGotoLogin.setForeground(new Color(102, 102, 102));
+        txtGotoLogin.setHorizontalAlignment(SwingConstants.CENTER);
+        txtGotoLogin.setText("Đi đến đăng nhập");
 
-        JPanel formLogin = new RoundedPanel(20);
-        formLogin.setBackground(Color.WHITE);
+        JPanel formRegister = new RoundedPanel(20);
+        formRegister.setBackground(Color.WHITE);
 
-        javax.swing.GroupLayout formLoginLayout;
-        formLoginLayout = new GroupLayout(formLogin);
-        formLogin.setLayout(formLoginLayout);
+        GroupLayout formRegisterLayout;
+        formRegisterLayout = new GroupLayout(formRegister);
+        formRegister.setLayout(formRegisterLayout);
 
-        GroupLayout.Group horizontalGroup = formLoginLayout.createParallelGroup(Alignment.LEADING)
-                .addGroup(formLoginLayout.createSequentialGroup()
+        GroupLayout.Group horizontalGroup = formRegisterLayout.createParallelGroup(Alignment.LEADING)
+                .addGroup(formRegisterLayout.createSequentialGroup()
                         .addGap(30, 30, 30)
-                        .addGroup(formLoginLayout.createParallelGroup(Alignment.LEADING)
+                        .addGroup(formRegisterLayout.createParallelGroup(Alignment.LEADING)
                                 .addComponent(txtPassword)
                                 .addComponent(txtUsername)
+                                .addComponent(txtConfirmPassword)
+                                .addComponent(edtConfirmPassword)
                                 .addComponent(txtLogin, Alignment.LEADING, DEFAULT_SIZE, 561, Short.MAX_VALUE)
                                 .addComponent(edtUsername, Alignment.LEADING)
                                 .addComponent(edtPassword)
                                 .addComponent(txtNotification, Alignment.LEADING, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(btnLogin, Alignment.LEADING, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(txtGotoRegister, Alignment.LEADING, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE))
+                                .addComponent(btnRegister, Alignment.LEADING, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(txtGotoLogin, Alignment.LEADING, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE))
                         .addGap(30, 30, 30));
-        formLoginLayout.setHorizontalGroup(horizontalGroup);
+        formRegisterLayout.setHorizontalGroup(horizontalGroup);
 
-        GroupLayout.Group verticalGroup = formLoginLayout.createSequentialGroup()
+        GroupLayout.Group verticalGroup = formRegisterLayout.createSequentialGroup()
                 .addGap(26, 26, 26)
                 .addComponent(txtLogin, PREFERRED_SIZE, 65, PREFERRED_SIZE)
                 .addGap(26, 26, 26)
                 .addComponent(txtUsername)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(edtUsername, PREFERRED_SIZE, 57, PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(txtPassword)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(edtPassword, PREFERRED_SIZE, 57, PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(txtConfirmPassword)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(edtConfirmPassword, PREFERRED_SIZE, 57, PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(txtNotification)
                 .addGap(18, 18, 18)
-                .addComponent(btnLogin, PREFERRED_SIZE, 55, PREFERRED_SIZE)
+                .addComponent(btnRegister, PREFERRED_SIZE, 55, PREFERRED_SIZE)
                 .addGap(36, 36, 36)
-                .addComponent(txtGotoRegister)
+                .addComponent(txtGotoLogin)
                 .addContainerGap(45, Short.MAX_VALUE);
-        formLoginLayout.setVerticalGroup(verticalGroup);
+        formRegisterLayout.setVerticalGroup(verticalGroup);
         // =========================================================================
 
         // =============================== BACKGROUND ==============================
         JPanel background = new JPanel();
         background.setBackground(new Color(30, 34, 82));
-        javax.swing.GroupLayout backgroundLayout = new javax.swing.GroupLayout(background);
+        GroupLayout backgroundLayout = new GroupLayout(background);
         background.setLayout(backgroundLayout);
         backgroundLayout.setHorizontalGroup(
                 backgroundLayout.createParallelGroup(Alignment.LEADING)
                         .addGroup(backgroundLayout.createSequentialGroup()
                                 .addGap(324, 324, Short.MAX_VALUE)
-                                .addComponent(formLogin, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+                                .addComponent(formRegister, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
                                 .addGap(324, 324, Short.MAX_VALUE))
         );
         backgroundLayout.setVerticalGroup(
                 backgroundLayout.createParallelGroup(Alignment.LEADING)
                         .addGroup(backgroundLayout.createSequentialGroup()
-                                .addGap(110, 110, Short.MAX_VALUE)
-                                .addComponent(formLogin, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+                                .addGap(70, 70, Short.MAX_VALUE)
+                                .addComponent(formRegister, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
                                 .addGap(150, 150, Short.MAX_VALUE))
         );
         // =========================================================================
@@ -204,7 +220,7 @@ public class Login extends RoundedJFrame {
         getContentPane().add(titleBar);
         getContentPane().add(background);
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setMinimumSize(new Dimension(1280, 768));
         setSize(new Dimension(1280, 768));
         setLocationRelativeTo(null);
@@ -213,7 +229,6 @@ public class Login extends RoundedJFrame {
         // =========================================================================
         // =========================================================================
         // =========================================================================
-        
 
         titleBar.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
             public void mouseDragged(java.awt.event.MouseEvent evt) {
@@ -250,23 +265,11 @@ public class Login extends RoundedJFrame {
             }
         });
 
-        btnLogin.addMouseListener(new java.awt.event.MouseAdapter() {
+        btnRegister.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 executeLogin();
             }
         });
-
-        txtGotoRegister.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                gotoRegister();
-            }
-        });
-    }
-
-    private void gotoRegister() {
-        Register register = new Register();
-        register.setVisible(true);
-        dispose();
     }
 
     private void moveFrame(java.awt.event.MouseEvent evt) {
@@ -323,11 +326,13 @@ public class Login extends RoundedJFrame {
     private void executeLogin() {
         String username = this.edtUsername.getText();
         String password = this.edtPassword.getText();
+        String confirmPassword = this.edtConfirmPassword.getText();
 
         String img1 = "<img src='" + this.getClass().getResource("/emoji_images/emoji_6.png") + "' width='32' height='32'/>";
 
         showLoading();
         SetTimeOut.setTimeout(()->{
+            System.out.println(confirmPassword);
             if (username.equals("") || password.equals("")) {
             raiseError("<html>Vui lòng nhập tài khoản và mật khẩu " + img1 + "</html>");
             }}, 2000);
@@ -336,26 +341,27 @@ public class Login extends RoundedJFrame {
 
     public static void main(String[] args) {
         try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    UIManager.setLookAndFeel(info.getClassName());
                     break;
                 }
             }
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(com.ntdat.chatapp.ui.Login.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(Register.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         System.out.println("Start login");
-        EventQueue.invokeLater(() -> new Login().setVisible(true));
+        EventQueue.invokeLater(() -> new Register().setVisible(true));
     }
 
-    private javax.swing.JPanel btnClose;
-    private javax.swing.JPanel btnMinimize;
-    private javax.swing.JTextField edtPassword;
-    private javax.swing.JTextField edtUsername;
-    private javax.swing.JLabel txtClose;
-    private javax.swing.JLabel txtNotification;
-    private javax.swing.JLabel txtMinimize;
+    private JPanel btnClose;
+    private JPanel btnMinimize;
+    private JTextField edtPassword;
+    private JTextField edtConfirmPassword;
+    private JTextField edtUsername;
+    private JLabel txtClose;
+    private JLabel txtNotification;
+    private JLabel txtMinimize;
     private int pX;
     private int pY;
 }

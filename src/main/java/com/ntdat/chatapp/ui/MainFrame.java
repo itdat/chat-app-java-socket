@@ -5,6 +5,7 @@
  */
 package com.ntdat.chatapp.ui;
 
+import com.ntdat.chatapp.Main;
 import com.ntdat.chatapp.ui.customcomponent.*;
 import com.ntdat.chatapp.ui.fragment.*;
 
@@ -27,7 +28,7 @@ public class MainFrame extends RoundedJFrame {
         JLabel txtAppName = new JLabel();
         txtAppName.setFont(DEFAULT_FONT);
         txtAppName.setForeground(Color.WHITE);
-        txtAppName.setText("ChatApp ITD v1.0");
+        txtAppName.setText(Main.APP_NAME);
 
         // Create Title bar button
         RoundedPanel btnTitleBar = new RoundedPanel(10);
