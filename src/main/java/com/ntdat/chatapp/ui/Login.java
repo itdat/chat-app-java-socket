@@ -11,6 +11,13 @@ import com.ntdat.chatapp.utilities.SetTimeOut;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.Scanner;
 
 import static javax.swing.GroupLayout.*;
 
@@ -327,25 +334,62 @@ public class Login extends RoundedJFrame {
         String img1 = "<img src='" + this.getClass().getResource("/emoji_images/emoji_6.png") + "' width='32' height='32'/>";
 
         showLoading();
-        SetTimeOut.setTimeout(()->{
-            if (username.equals("") || password.equals("")) {
-            raiseError("<html>Vui lòng nhập tài khoản và mật khẩu " + img1 + "</html>");
-            }}, 2000);
 
+        EventQueue.invokeLater(() -> {
+            if (username.isEmpty() || password.isEmpty()) {
+                raiseError("<html>Tài khoản hoặc mật khẩu không thể rỗng " + img1 + "</html>");
+            } else {
+                // getting localhost ip
+                InetAddress ip = null;
+                try {
+                    ip = InetAddress.getByName("localhost");
+                } catch (UnknownHostException e) {
+                    e.printStackTrace();
+                }
+
+                // establish the connection
+                Socket s = null;
+                try {
+                    s = new Socket(ip, Main.SERVER_PORT);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    DataOutputStream dos = new DataOutputStream(s.getOutputStream());
+                    dos.writeUTF("LOGIN|" + username + "|" + password);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    DataInputStream dis = new DataInputStream(s.getInputStream());
+                    DataOutputStream dos = new DataOutputStream(s.getOutputStream());
+                    String result = dis.readUTF();
+                    switch (result) {
+                        case "LOGIN_SUCCESS":
+                            raiseError("<html>Đăng nhập thành công</html>");
+                            dos.writeUTF("READY");
+                            MainFrame mainFrame = new MainFrame(s, username);
+                            mainFrame.setVisible(true);
+                            dispose();
+                            break;
+                        case "USER_NOT_EXIST":
+                            raiseError("<html>Tên người dùng không tồn tại</html>");
+                            break;
+                        case "WRONG_PASSWORD":
+                            raiseError("<html>Sai mật khẩu</html>");
+                            break;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        });
     }
 
     public static void main(String[] args) {
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(com.ntdat.chatapp.ui.Login.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        System.out.println("Start login");
         EventQueue.invokeLater(() -> new Login().setVisible(true));
     }
 

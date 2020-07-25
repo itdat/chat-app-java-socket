@@ -11,6 +11,15 @@ import com.ntdat.chatapp.utilities.SetTimeOut;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.Scanner;
 
 import static javax.swing.GroupLayout.*;
 
@@ -18,6 +27,8 @@ public class Register extends RoundedJFrame {
     // DEFINE VALUES
     private static final Font DEFAULT_FONT = new Font("Roboto", Font.PLAIN, 18);
     private static final Color DEFAULT_DARK_COLOR = new Color(82, 82, 82, 255);
+
+    final static int ServerPort = 1234;
 
     public Register() {
         initComponents();
@@ -267,9 +278,22 @@ public class Register extends RoundedJFrame {
 
         btnRegister.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                executeLogin();
+                executeRegister();
             }
         });
+        txtGotoLogin.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                gotoLogin();
+            }
+        });
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private void gotoLogin() {
+        Login login = new Login();
+        login.setVisible(true);
+        dispose();
     }
 
     private void moveFrame(java.awt.event.MouseEvent evt) {
@@ -323,7 +347,7 @@ public class Register extends RoundedJFrame {
         SetTimeOut.setTimeout(()-> txtNotification.setVisible(false), 2000);
     }
 
-    private void executeLogin() {
+    private void executeRegister() {
         String username = this.edtUsername.getText();
         String password = this.edtPassword.getText();
         String confirmPassword = this.edtConfirmPassword.getText();
@@ -331,12 +355,57 @@ public class Register extends RoundedJFrame {
         String img1 = "<img src='" + this.getClass().getResource("/emoji_images/emoji_6.png") + "' width='32' height='32'/>";
 
         showLoading();
-        SetTimeOut.setTimeout(()->{
-            System.out.println(confirmPassword);
-            if (username.equals("") || password.equals("")) {
-            raiseError("<html>Vui lòng nhập tài khoản và mật khẩu " + img1 + "</html>");
-            }}, 2000);
 
+        EventQueue.invokeLater(() -> {
+            if (!password.equals(confirmPassword)) {
+                raiseError("<html>Mật khẩu xác nhận không khớp " + img1 + "</html>");
+            } else {
+                // getting localhost ip
+                InetAddress ip = null;
+                try {
+                    ip = InetAddress.getByName("localhost");
+                } catch (UnknownHostException e) {
+                    e.printStackTrace();
+                }
+
+                // establish the connection
+                Socket s = null;
+                try {
+                    s = new Socket(ip, ServerPort);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                // obtaining input and out streams
+                try {
+                    assert s != null;
+                    DataInputStream dis = new DataInputStream(s.getInputStream());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    DataOutputStream dos = new DataOutputStream(s.getOutputStream());
+                    dos.writeUTF("REGISTER|" + username + "|" + password);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    DataInputStream dis = new DataInputStream(s.getInputStream());
+                    String result = dis.readUTF();
+                    switch (result) {
+                        case "REGISTER_SUCCESS":
+                            raiseError("<html>Đăng ký thành công</html>");
+                            break;
+                        case "USERNAME_EXISTED":
+                            raiseError("<html>Tên người dùng đã tồn tại</html>");
+                            break;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     public static void main(String[] args) {

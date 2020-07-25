@@ -12,6 +12,13 @@ import com.ntdat.chatapp.ui.fragment.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.util.Scanner;
 
 import static javax.swing.UIManager.getDefaults;
 
@@ -20,21 +27,63 @@ public class MainFrame extends RoundedJFrame {
     private static final Font DEFAULT_FONT = new Font("Roboto", Font.PLAIN, 18);
     private static final Color PANEL_BACKGROUND_COLOR = Color.decode("#586692");
 
-    public MainFrame() {initComponents();}
+    private Socket socket;
+    private String username;
+    private String currentRecipient = null;
 
-    public void initComponents() {
+    private JPanel onlineList = new JPanel();
+    private JPanel pnlMain;
+    private ConversationPanel pnlConversation;
+
+    public MainFrame(Socket socket, String username) throws IOException {
+        this.socket = socket;
+        this.username = username;
+        initComponents();
+        updateUI();
+    }
+
+    private void updateUI() throws IOException {
+        DataInputStream dis = new DataInputStream(this.socket.getInputStream());
+        // readMessage thread
+        Thread readMessage = new Thread(() -> {
+            while (true) {
+                try {
+                    // read the message sent to this client
+                    String msg = dis.readUTF();
+                    System.out.println(msg);
+                    String[] tokens = msg.split("\\|");
+                    switch (tokens[0]) {
+                        case "UPDATE_ONLINE_LIST":
+                            String[] users = tokens[1].split(",");
+                            updateOnlineList(users);
+                            break;
+                        case "MESSAGE":
+                            String message = tokens[1];
+                            String sender = tokens[2];
+                            if (sender.equals(currentRecipient)) {
+//                                this.pnlConversation.addBubbleChat(message);
+                                pnlConversation.addBubbleChatReceive(message);
+                                pnlConversation.revalidate();
+                                pnlConversation.repaint();
+                            }
+                            break;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    break;
+                }
+            }
+        });
+        readMessage.start();
+    }
+
+    public void initComponents() throws IOException {
         // =============================== TITLE BAR ===============================
         // Application name
         JLabel txtAppName = new JLabel();
         txtAppName.setFont(DEFAULT_FONT);
         txtAppName.setForeground(Color.WHITE);
         txtAppName.setText(Main.APP_NAME);
-
-        // Create Title bar button
-        RoundedPanel btnTitleBar = new RoundedPanel(10);
-        btnTitleBar.setPreferredSize(new Dimension(30,30));
-        btnTitleBar.setBackground(Color.decode("#4D599F"));
-        btnTitleBar.setLayout(new BorderLayout());
 
         // Create UI minimize button
         txtMinimize = new JLabel();
@@ -43,7 +92,10 @@ public class MainFrame extends RoundedJFrame {
         txtMinimize.setHorizontalAlignment(SwingConstants.CENTER);
         txtMinimize.setText("-");
         txtMinimize.setAlignmentY(0.0F);
-        btnMinimize = btnTitleBar;
+        btnMinimize = new RoundedPanel(10);
+        btnMinimize.setPreferredSize(new Dimension(30,30));
+        btnMinimize.setBackground(new Color(77, 89, 159));
+        btnMinimize.setLayout(new BorderLayout());
         btnMinimize.add(txtMinimize, BorderLayout.CENTER);
 
         // Create UI close button
@@ -53,7 +105,10 @@ public class MainFrame extends RoundedJFrame {
         txtClose.setHorizontalAlignment(SwingConstants.CENTER);
         txtClose.setText("×");
         txtClose.setAlignmentY(0.0F);
-        btnClose = btnTitleBar;
+        btnClose = new RoundedPanel(10);
+        btnClose.setPreferredSize(new Dimension(30,30));
+        btnClose.setBackground(new Color(77, 89, 159));
+        btnClose.setLayout(new BorderLayout());
         btnClose.add(txtClose, BorderLayout.CENTER);
 
         // Create UI title bar
@@ -104,29 +159,26 @@ public class MainFrame extends RoundedJFrame {
         FlatTextInput searchUser = new FlatTextInput("Tìm tài khoản...");
 
         // Online list
-        JPanel onlineList = new JPanel();
+        onlineList = new JPanel();
         onlineList.setBackground(Color.decode("#1E2252"));
         GroupLayout onlineListLayout = new GroupLayout(onlineList);
         onlineList.setLayout(onlineListLayout);
         GroupLayout.Group onlineListLayoutHorizontalGroup = onlineListLayout.createParallelGroup(GroupLayout.Alignment.LEADING);
         GroupLayout.Group onlineListLayoutVerticalGroup = onlineListLayout.createSequentialGroup();
-        // Dynamically add online user
-        int onlineUsers = 100;
-        for (int i = 0; i < onlineUsers; i++) {
-            FlatButton btn = new FlatButton();
-            btn.setFont(DEFAULT_FONT);
-            btn.setText("User " + i);
-            onlineListLayoutHorizontalGroup
-                    .addComponent(btn, javax.swing.GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE);
-            onlineListLayoutVerticalGroup
-                    .addGap(2)
-                    .addComponent(btn, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE);
-        }
+
+        FlatButton btn = new FlatButton();
+        btn.setFont(DEFAULT_FONT);
+        btn.setText(username);
+        onlineListLayoutHorizontalGroup
+                .addComponent(btn, javax.swing.GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE);
+        onlineListLayoutVerticalGroup
+                .addGap(2)
+                .addComponent(btn, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE);
         onlineListLayout.setHorizontalGroup(onlineListLayout.createSequentialGroup().addGap(2).addGroup(onlineListLayoutHorizontalGroup).addGap(2));
-        onlineListLayout.setVerticalGroup(onlineListLayoutVerticalGroup);
+        onlineListLayout.setVerticalGroup(onlineListLayout.createSequentialGroup().addGroup(onlineListLayoutVerticalGroup));
+
         // Add to scrollable pane
         JScrollPane onlineListScroll = new JScrollPane();
-        onlineList.setBackground(Color.decode("#1E2252"));
         onlineListScroll.setBorder(new EmptyBorder(0,0,0,0));
         onlineListScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         onlineListScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -157,7 +209,10 @@ public class MainFrame extends RoundedJFrame {
         // =========================================================================
 
         // ============================== MAIN PANEL ===============================
-        JPanel pnlMain = ConversationPanel.getInstance();
+        pnlMain = new JPanel();
+        pnlMain.setLayout(new BoxLayout(pnlMain, BoxLayout.Y_AXIS));
+        this.pnlConversation = new ConversationPanel(this.socket, this.username, null);
+        pnlMain.add(this.pnlConversation);
         // =========================================================================
 
         // Background Panel
@@ -180,10 +235,7 @@ public class MainFrame extends RoundedJFrame {
                                 .addComponent(titleBar, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                                 .addGroup(backgroundLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
                                         .addComponent(sidePanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                        .addGroup(backgroundLayout.createSequentialGroup()
-                                                .addGap(0, 0, 0)
-                                                .addComponent(pnlMain, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                .addGap(0, 0, 0))))
+                                        .addComponent(pnlMain, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
         );
 
         // Main JFrame
@@ -218,6 +270,13 @@ public class MainFrame extends RoundedJFrame {
             }
         });
 
+        txtLogo.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                pnlConversation.addBubbleChatReceive("bla bla");
+            }
+        });
+
         btnClose.setBackground(Color.decode("#4D599F"));
         btnClose.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -242,6 +301,40 @@ public class MainFrame extends RoundedJFrame {
                 mouseExitHandle(evt);
             }
         });
+    }
+
+    private void updateOnlineList(String[] users) {
+        onlineList.removeAll();
+        GroupLayout onlineListLayout = new GroupLayout(onlineList);
+        onlineList.setLayout(onlineListLayout);
+        GroupLayout.Group onlineListLayoutHorizontalGroup = onlineListLayout.createParallelGroup(GroupLayout.Alignment.LEADING);
+        GroupLayout.Group onlineListLayoutVerticalGroup = onlineListLayout.createSequentialGroup();
+
+        for (String user : users) {
+            FlatButton btn = new FlatButton();
+            btn.addMouseListener(new MouseAdapter() {
+                public void mouseClicked(MouseEvent e) {
+                    currentRecipient = user;
+                    pnlMain.removeAll();
+                    pnlConversation = new ConversationPanel(socket, username, user);
+                    pnlMain.add(pnlConversation);
+                    pnlMain.revalidate();
+                    pnlMain.repaint();
+                }
+            });
+            btn.setFont(DEFAULT_FONT);
+            btn.setText(user);
+            onlineListLayoutHorizontalGroup
+                    .addComponent(btn, javax.swing.GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE);
+            onlineListLayoutVerticalGroup
+                    .addGap(2)
+                    .addComponent(btn, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE);
+        }
+        onlineListLayout.setHorizontalGroup(onlineListLayout.createSequentialGroup().addGap(2).addGroup(onlineListLayoutHorizontalGroup).addGap(2));
+        onlineListLayout.setVerticalGroup(onlineListLayout.createSequentialGroup().addGroup(onlineListLayoutVerticalGroup));
+
+        onlineList.revalidate();
+        onlineList.repaint();
     }
 
     private void moveFrame(java.awt.event.MouseEvent evt) {
@@ -272,12 +365,19 @@ public class MainFrame extends RoundedJFrame {
     }
 
     private void close() {
-        dispose();
+        try {
+            DataOutputStream dos = new DataOutputStream(this.socket.getOutputStream());
+            dos.writeUTF("LOGOUT");
+            dispose();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {
         getDefaults().put("ScrollBar.minimumThumbSize", new Dimension(29, 29));
-        EventQueue.invokeLater(() -> new MainFrame().setVisible(true));
+//        EventQueue.invokeLater(() -> new MainFrame().setVisible(true));
     }
 
     private JPanel btnClose;

@@ -7,13 +7,15 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 import java.awt.event.KeyEvent;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class ConversationPanel extends JPanel {
-    private static ConversationPanel instance;
-
     // DEFINE VALUES
     private static final Font DEFAULT_FONT = new Font("Roboto", Font.PLAIN, 18);
     private static final Color PANEL_BACKGROUND_COLOR = Color.decode("#586692");
@@ -23,21 +25,16 @@ public class ConversationPanel extends JPanel {
     private GroupLayout.Group pnlConversationContentHorizontalGroup;
     private GroupLayout.Group pnlConversationContentVerticalGroup;
     private FlatTextArea edtInputChat;
+    private Socket socket;
+    private String username;
+    private String recipient;
 
-    private ConversationPanel() {
+    public ConversationPanel(Socket socket, String username, String recipient) {
+        this.socket = socket;
+        this.username = username;
+        this.recipient = recipient;
         initComponents();
     }
-
-    public static ConversationPanel getInstance() {
-        if (instance == null) {
-            instance = new ConversationPanel();
-        }
-        return instance;
-    }
-
-//    public static void releaseInstance() {
-//        instance = null;
-//    }
 
     private void initComponents() {
         // ============================== HEADER BAR ===============================
@@ -46,7 +43,7 @@ public class ConversationPanel extends JPanel {
         txtUsername.setFont(DEFAULT_FONT);
         txtUsername.setForeground(Color.WHITE);
         txtUsername.setHorizontalAlignment(SwingConstants.CENTER);
-        txtUsername.setText("Username: ntdat1999");
+        txtUsername.setText("Username: " + username);
         txtUsername.setIcon(new javax.swing.ImageIcon(getClass().getResource("/user.png")));
         RoundedPanel pnlUsername = new RoundedPanel(10);
         pnlUsername.setLayout(new BorderLayout());
@@ -67,7 +64,7 @@ public class ConversationPanel extends JPanel {
         // Conversation name
         JLabel txtConversationName = new JLabel();
         txtConversationName.setFont(new Font("Roboto", Font.BOLD, 24));
-        txtConversationName.setText("User 1");
+        txtConversationName.setText(recipient);
         txtConversationName.setForeground(new Color(68, 68, 68));
         JSeparator separator = new JSeparator();
         separator.setForeground(new Color(142, 142, 142));
@@ -284,7 +281,20 @@ public class ConversationPanel extends JPanel {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 if (evt.getKeyCode()== KeyEvent.VK_ENTER) {
                     addBubbleChat(edtInputChat.getText());
-                    SwingUtilities.invokeLater(() -> edtInputChat.setText(""));
+                    try {
+                        DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+                        String msg = edtInputChat.getText();
+                        try {
+                            dos.writeUTF("SEND|" + recipient +"|" + msg + "|" + username);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    SwingUtilities.invokeLater(() -> {
+                        edtInputChat.setText("");
+                    });
                 }
             }
         });
@@ -320,7 +330,7 @@ public class ConversationPanel extends JPanel {
         return String.join(" ", words);
     }
 
-    private void addBubbleChat(String content) {
+    public void addBubbleChat(String content) {
         JLabel txtBubbleContent = new JLabel();
         txtBubbleContent.setFont(DEFAULT_FONT);
         txtBubbleContent.setText("<html><div style='width: 400px'>" + breakLongWords(content) + "</div></html>");
@@ -341,7 +351,38 @@ public class ConversationPanel extends JPanel {
                 .addComponent(pnlAlignedBubble,GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                 .addGap(5);
 
-        this.pnlConversationContent.add(new JLabel(content));
+        this.pnlConversationContent.revalidate();
+        this.splConversationContent.revalidate();
+        this.pnlConversationContent.repaint();
+        this.splConversationContent.repaint();
+
+        SwingUtilities.invokeLater(() -> {
+            Dimension vpSize = splConversationContent.getViewport().getExtentSize();
+            Dimension logSize = pnlConversationContent.getSize();
+            int height = logSize.height - vpSize.height;
+            splConversationContent.getViewport().setViewPosition(new Point(0, height));
+        });
+    }
+
+    public void addBubbleChatReceive(String content) {
+        JLabel txtBubbleContent = new JLabel();
+        txtBubbleContent.setFont(DEFAULT_FONT);
+        txtBubbleContent.setText("<html><div style='width: 400px'>" + breakLongWords(content) + "</div></html>");
+        System.out.println(breakLongWords(content));
+        txtBubbleContent.setVerticalAlignment(javax.swing.SwingConstants.TOP);
+        RoundedPanel pnlBubble = new RoundedPanel(20);
+        pnlBubble.add(txtBubbleContent);
+        pnlBubble.setBorder(new EmptyBorder(10,10,10,10));
+        JPanel pnlAlignedBubble = new JPanel();
+        pnlAlignedBubble.setOpaque(false);
+        pnlAlignedBubble.setLayout(new BorderLayout());
+        pnlAlignedBubble.add(pnlBubble, BorderLayout.WEST);
+
+        pnlConversationContentHorizontalGroup.addComponent(pnlAlignedBubble, GroupLayout.PREFERRED_SIZE, 990, GroupLayout.PREFERRED_SIZE);
+        pnlConversationContentVerticalGroup
+                .addComponent(pnlAlignedBubble,GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addGap(5);
+
         this.pnlConversationContent.revalidate();
         this.splConversationContent.revalidate();
         this.pnlConversationContent.repaint();

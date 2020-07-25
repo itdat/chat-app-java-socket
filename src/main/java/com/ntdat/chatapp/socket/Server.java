@@ -1,19 +1,17 @@
 package com.ntdat.chatapp.socket;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import com.ntdat.chatapp.data.User;
+
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
-import java.util.StringTokenizer;
-import java.util.Vector;
+import java.util.*;
 
 public class Server
 {
-
     // Vector to store active clients
     static Vector<ClientHandler> ar = new Vector<>();
+    static List<User> userList = new ArrayList<>();
 
     // counter for clients
     static int i = 0;
@@ -46,10 +44,10 @@ public class Server
             // Create a new Thread with this object.
             Thread t = new Thread(mtch);
 
-            System.out.println("Adding this client to active client list");
+//            System.out.println("Adding this client to active client list");
 
             // add this client to active clients list
-            ar.add(mtch);
+//            ar.add(mtch);
 
             // start the thread.
             t.start();
@@ -66,6 +64,8 @@ public class Server
 // ClientHandler class
 class ClientHandler implements Runnable
 {
+    private static final String USER_LIST_DATA_PATH = "./src/main/resources/data/user-list.dat";
+
     Scanner scn = new Scanner(System.in);
     private String name;
     final DataInputStream dis;
@@ -83,6 +83,26 @@ class ClientHandler implements Runnable
         this.isloggedin=true;
     }
 
+    private void setName(String name) {
+        this.name = name;
+    }
+
+    private void loadUserList() {
+        ObjectInputStream ois = null;
+        try {
+            ois = new ObjectInputStream(new FileInputStream(USER_LIST_DATA_PATH));
+            Server.userList = (List<User>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void storeUserList() throws IOException {
+        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(USER_LIST_DATA_PATH));
+        oos.writeObject(Server.userList);
+    }
+
     @Override
     public void run() {
 
@@ -96,43 +116,94 @@ class ClientHandler implements Runnable
 
                 System.out.println(received);
 
-                if(received.equals("logout")){
-                    this.isloggedin=false;
-                    this.s.close();
-                    break;
-                }
-
-                // break the string into message and recipient part
-                StringTokenizer st = new StringTokenizer(received, "#");
-                String MsgToSend = st.nextToken();
-                String recipient = st.nextToken();
-
-                // search for the recipient in the connected devices list.
-                // ar is the vector storing client of active users
-                for (ClientHandler mc : Server.ar)
-                {
-                    // if the recipient is found, write on its
-                    // output stream
-                    if (mc.name.equals(recipient) && mc.isloggedin==true)
-                    {
-                        mc.dos.writeUTF(this.name+" : "+MsgToSend);
+                String[] tokens = received.split("\\|");
+                switch (tokens[0]) {
+                    case "LOGOUT":
+                        for (int i = 0; i < Server.ar.size(); i++) {
+                            if (Server.ar.get(i).s == this.s) {
+                                Server.ar.remove(i);
+                                this.s.close();
+                                break;
+                            }
+                        }
                         break;
-                    }
+                    case "REGISTER":
+                        loadUserList();
+                        boolean isExisted = false;
+                        for (User user : Server.userList) {
+                            if (user.getUsername().equals(tokens[1])) {
+                                dos.writeUTF("USERNAME_EXISTED");
+                                this.s.close();
+                                isExisted = true;
+                                break;
+                            }
+                        }
+                        if (!isExisted) {
+                            User newUser = new User(tokens[1], tokens[2]);
+                            Server.userList.add(newUser);
+                            storeUserList();
+                            dos.writeUTF("REGISTER_SUCCESS");
+                            this.s.close();
+                            break;
+                        }
+                        break;
+                    case "LOGIN":
+                        loadUserList();
+                        boolean isValid = false;
+                        for (User user : Server.userList) {
+                            if (user.getUsername().equals(tokens[1])) {
+                                isValid = true;
+                                if (user.getPassword().equals(tokens[2])) {
+                                    this.setName(tokens[1]);
+                                    dos.writeUTF("LOGIN_SUCCESS");
+                                    break;
+                                } else {
+                                    dos.writeUTF("WRONG_PASSWORD");
+                                    this.s.close();
+                                    break;
+                                }
+                            }
+                        }
+                        if (!isValid) {
+                            dos.writeUTF("USER_NOT_EXIST");
+                            this.s.close();
+                            break;
+                        }
+                        break;
+                    case "READY":
+                        Server.ar.add(this);
+                        System.out.println("Added " + this.name + " to active list");
+
+                        List<String> usernames = new ArrayList<>();
+                        for (ClientHandler client : Server.ar) {
+                            usernames.add(client.name);
+                        }
+                        String newOnlineList = String.join(",", usernames);
+
+                        for (ClientHandler client : Server.ar) {
+                            client.dos.writeUTF("UPDATE_ONLINE_LIST|" + newOnlineList);
+                        }
+                        break;
+                    case "SEND":
+                        // "SEND|recipient|message|sender"
+                        String recipient = tokens[1];
+                        String message = tokens[2];
+                        String sender = tokens[3];
+                        for (ClientHandler client : Server.ar) {
+                            if (client.name.equals(recipient)) {
+                                client.dos.writeUTF("MESSAGE|" + message + "|" + sender);
+                                break;
+                            }
+                        }
+                        break;
+                    default:
+                        break;
                 }
             } catch (IOException e) {
-
                 e.printStackTrace();
+                break;
             }
 
-        }
-        try
-        {
-            // closing resources
-            this.dis.close();
-            this.dos.close();
-
-        }catch(IOException e){
-            e.printStackTrace();
         }
     }
 }
