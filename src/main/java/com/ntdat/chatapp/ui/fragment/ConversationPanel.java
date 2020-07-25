@@ -1,18 +1,25 @@
 package com.ntdat.chatapp.ui.fragment;
 
+import com.ntdat.chatapp.Main;
 import com.ntdat.chatapp.ui.customcomponent.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 
 public class ConversationPanel extends JPanel {
@@ -28,6 +35,7 @@ public class ConversationPanel extends JPanel {
     private Socket socket;
     private String username;
     private String recipient;
+    private File chosenFile = null;
 
     public ConversationPanel(Socket socket, String username, String recipient) {
         this.socket = socket;
@@ -136,48 +144,14 @@ public class ConversationPanel extends JPanel {
                         .addContainerGap()
         );
 
-        // Conversation contents
-        // Generate sample text 1
-        JLabel txtBubbleContent = new JLabel();
-        txtBubbleContent.setFont(DEFAULT_FONT);
-        txtBubbleContent.setText("<html><div style='width: 400px'>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</div></html>");
-        txtBubbleContent.setForeground(Color.WHITE);
-        txtBubbleContent.setVerticalAlignment(javax.swing.SwingConstants.TOP);
-        RoundedPanel pnlBubble = new RoundedPanel(20);
-        pnlBubble.add(txtBubbleContent);
-        pnlBubble.setBackground(new Color(77, 89, 159));
-        pnlBubble.setBorder(new EmptyBorder(10,10,10,10));
-        JPanel pnlAlignedBubble = new JPanel();
-        pnlAlignedBubble.setOpaque(false);
-        pnlAlignedBubble.setLayout(new BorderLayout());
-        pnlAlignedBubble.add(pnlBubble, BorderLayout.EAST);
-        // Generate sample text 2
-        JLabel txtBubbleContent2 = new JLabel();
-        txtBubbleContent2.setFont(DEFAULT_FONT);
-        txtBubbleContent2.setText("<html><div style='width: 400px'>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</div></html>");
-        txtBubbleContent2.setVerticalAlignment(javax.swing.SwingConstants.TOP);
-        RoundedPanel pnlBubble2 = new RoundedPanel(20);
-        pnlBubble2.add(txtBubbleContent2);
-        pnlBubble2.setBorder(new EmptyBorder(10,10,10,10));
-        JPanel alignedBubble2 = new JPanel();
-        alignedBubble2.setOpaque(false);
-        alignedBubble2.setLayout(new BorderLayout());
-        alignedBubble2.add(pnlBubble2, BorderLayout.WEST);
         // Add to content panel
         pnlConversationContent = new JPanel();
         pnlConversationContent.setBackground(Color.WHITE);
         GroupLayout pnlConversationContentLayout = new javax.swing.GroupLayout(pnlConversationContent);
         pnlConversationContent.setLayout(pnlConversationContentLayout);
-        pnlConversationContentHorizontalGroup = pnlConversationContentLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                .addComponent(pnlAlignedBubble, GroupLayout.PREFERRED_SIZE, 990, GroupLayout.PREFERRED_SIZE)
-                .addComponent(alignedBubble2, GroupLayout.PREFERRED_SIZE, 990, GroupLayout.PREFERRED_SIZE);
+        pnlConversationContentHorizontalGroup = pnlConversationContentLayout.createParallelGroup(GroupLayout.Alignment.LEADING);
         pnlConversationContentLayout.setHorizontalGroup(pnlConversationContentHorizontalGroup);
-        pnlConversationContentVerticalGroup = pnlConversationContentLayout.createSequentialGroup()
-                .addGap(26, 26, 26)
-                .addComponent(pnlAlignedBubble,GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(alignedBubble2,GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED);
+        pnlConversationContentVerticalGroup = pnlConversationContentLayout.createSequentialGroup();
         pnlConversationContentLayout.setVerticalGroup(pnlConversationContentVerticalGroup);
         // Add to scrollable content panel
         splConversationContent = new JScrollPane();
@@ -277,34 +251,70 @@ public class ConversationPanel extends JPanel {
             }
         });
 
-        edtInputChat.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                if (evt.getKeyCode()== KeyEvent.VK_ENTER) {
-                    addBubbleChat(edtInputChat.getText());
-                    try {
-                        DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-                        String msg = edtInputChat.getText();
-                        try {
-                            dos.writeUTF("SEND|" + recipient +"|" + msg + "|" + username);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    SwingUtilities.invokeLater(() -> {
-                        edtInputChat.setText("");
-                    });
+        icoPickFile.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                int res = fileChooser.showDialog(null, "Chọn file");
+                if (res == JFileChooser.APPROVE_OPTION) {
+                    chosenFile = fileChooser.getSelectedFile();
+                    edtInputChat.setForeground(Main.PANEL_BACKGROUND_COLOR);
+                    edtInputChat.setText(fileChooser.getSelectedFile().getName());
+                    edtInputChat.requestFocusInWindow();
                 }
             }
         });
 
-        SwingUtilities.invokeLater(() -> {
-            Dimension vpSize = splConversationContent.getViewport().getExtentSize();
-            Dimension logSize = pnlConversationContent.getSize();
-            int height = logSize.height - vpSize.height;
-            splConversationContent.getViewport().setViewPosition(new Point(0, height));
+        edtInputChat.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                if (evt.getKeyCode()== KeyEvent.VK_ENTER) {
+                    if (chosenFile != null) {
+                        try {
+                            DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+                            byte[] fileDataByte = Files.readAllBytes(chosenFile.toPath());
+                            byte[] encodeDataByte = Base64.getEncoder().withoutPadding().encode(fileDataByte);
+                            String encodeDataString = new String(encodeDataByte);
+                            dos.writeUTF("SEND_FILE|INFO|" + chosenFile.getName().replaceAll("\\|","_"));
+                            while (encodeDataString.length() > 4096) {
+                                String subString = encodeDataString.substring(0, 4096);
+                                dos.writeUTF("SEND_FILE|REMAIN|" + subString);
+                                encodeDataString = encodeDataString.substring(4096);
+                            }
+                            dos.writeUTF("SEND_FILE|END|" + encodeDataString);
+                            SwingUtilities.invokeLater(() -> {
+                                chosenFile = null;
+                                edtInputChat.setText("");
+                                edtInputChat.setForeground(Color.decode("#525252"));
+                            });
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        addBubbleChat(edtInputChat.getText());
+                        try {
+                            DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+                            String msg = edtInputChat.getText();
+                            try {
+                                dos.writeUTF("SEND|" + recipient +"|" + msg + "|" + username);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        SwingUtilities.invokeLater(() -> {
+                            edtInputChat.setText("");
+                        });
+                    }
+                }
+            }
         });
+
+//        SwingUtilities.invokeLater(() -> {
+//            Dimension vpSize = splConversationContent.getViewport().getExtentSize();
+//            Dimension logSize = pnlConversationContent.getSize();
+//            int height = logSize.height - vpSize.height;
+//            splConversationContent.getViewport().setViewPosition(new Point(0, height));
+//        });
     }
 
     private String breakLongWords(String content) {

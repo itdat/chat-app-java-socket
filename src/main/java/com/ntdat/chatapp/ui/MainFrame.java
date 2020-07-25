@@ -14,11 +14,10 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
-import java.util.Scanner;
+import java.util.*;
+import java.util.List;
 
 import static javax.swing.UIManager.getDefaults;
 
@@ -60,8 +59,8 @@ public class MainFrame extends RoundedJFrame {
                         case "MESSAGE":
                             String message = tokens[1];
                             String sender = tokens[2];
+                            pushHistoryConversation(username, sender, sender+":"+message);
                             if (sender.equals(currentRecipient)) {
-//                                this.pnlConversation.addBubbleChat(message);
                                 pnlConversation.addBubbleChatReceive(message);
                                 pnlConversation.revalidate();
                                 pnlConversation.repaint();
@@ -320,6 +319,7 @@ public class MainFrame extends RoundedJFrame {
                     pnlMain.add(pnlConversation);
                     pnlMain.revalidate();
                     pnlMain.repaint();
+                    loadHistoryConversation(username, currentRecipient);
                 }
             });
             btn.setFont(DEFAULT_FONT);
@@ -335,6 +335,51 @@ public class MainFrame extends RoundedJFrame {
 
         onlineList.revalidate();
         onlineList.repaint();
+    }
+
+    private void loadHistoryConversation(String username, String currentRecipient) {
+        List<String> conversation = getHistoryConversation(username, currentRecipient);
+        for (String message : conversation) {
+            if (message.startsWith(username)) {
+                pnlConversation.addBubbleChat(message.substring(username.length()+1));
+                if (message.startsWith(currentRecipient)) {
+                    pnlConversation.addBubbleChatReceive(message.substring(currentRecipient.length()+1));
+                }
+            } else {
+                pnlConversation.addBubbleChatReceive(message.substring(currentRecipient.length()+1));
+            }
+        }
+    }
+
+    private List<String> getHistoryConversation(String username, String currentRecipient) {
+        List<String> users = new ArrayList<>(Arrays.asList(username, currentRecipient));
+        Collections.sort(users);
+        String fileName = "./src/main/resources/data/conversations/" + String.join("-",users) + ".dat";
+        List<String> conversation = new ArrayList<>();
+        try {
+            ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fileName));
+            conversation = (List<String>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            return conversation;
+        }
+    }
+
+    private void pushHistoryConversation(String username, String currentRecipient, String message) {
+        List<String> users = new ArrayList<>(Arrays.asList(username, currentRecipient));
+        Collections.sort(users);
+        String fileName = "./src/main/resources/data/conversations/" + String.join("-",users) + ".dat";
+        List<String> conversation = getHistoryConversation(username, currentRecipient);
+        conversation.add(message);
+        try {
+            ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fileName));
+            oos.writeObject(conversation);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void moveFrame(java.awt.event.MouseEvent evt) {

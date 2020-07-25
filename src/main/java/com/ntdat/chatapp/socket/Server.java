@@ -5,6 +5,7 @@ import com.ntdat.chatapp.data.User;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class Server
@@ -72,6 +73,8 @@ class ClientHandler implements Runnable
     final DataOutputStream dos;
     Socket s;
     boolean isloggedin;
+    private List<String> receivedFile = new ArrayList<>();
+    private String receivedFileName;
 
     // constructor
     public ClientHandler(Socket s, String name,
@@ -117,6 +120,10 @@ class ClientHandler implements Runnable
                 System.out.println(received);
 
                 String[] tokens = received.split("\\|");
+
+                List<String> usernames;
+                String newOnlineList;
+
                 switch (tokens[0]) {
                     case "LOGOUT":
                         for (int i = 0; i < Server.ar.size(); i++) {
@@ -125,6 +132,15 @@ class ClientHandler implements Runnable
                                 this.s.close();
                                 break;
                             }
+                        }
+                        System.out.println("Deleted " + this.name + " from active list");
+                        usernames = new ArrayList<>();
+                        for (ClientHandler client : Server.ar) {
+                            usernames.add(client.name);
+                        }
+                        newOnlineList = String.join(",", usernames);
+                        for (ClientHandler client : Server.ar) {
+                            client.dos.writeUTF("UPDATE_ONLINE_LIST|" + newOnlineList);
                         }
                         break;
                     case "REGISTER":
@@ -174,11 +190,11 @@ class ClientHandler implements Runnable
                         Server.ar.add(this);
                         System.out.println("Added " + this.name + " to active list");
 
-                        List<String> usernames = new ArrayList<>();
+                        usernames = new ArrayList<>();
                         for (ClientHandler client : Server.ar) {
                             usernames.add(client.name);
                         }
-                        String newOnlineList = String.join(",", usernames);
+                        newOnlineList = String.join(",", usernames);
 
                         for (ClientHandler client : Server.ar) {
                             client.dos.writeUTF("UPDATE_ONLINE_LIST|" + newOnlineList);
@@ -195,6 +211,38 @@ class ClientHandler implements Runnable
                                 break;
                             }
                         }
+                        break;
+                    case "SEND_FILE":
+                        if (tokens[1].equals("INFO")) {
+                            this.receivedFileName = tokens[2];
+                        } else if (tokens[1].equals("REMAIN")) {
+                            String msg = received.substring("SEND_FILE|REMAIN|".length());
+                            receivedFile.add(msg);
+                        } else {
+                            String msg = received.substring("SEND_FILE|END|".length());
+                            receivedFile.add(msg);
+                            String receivedString = String.join("", receivedFile);
+                            byte[] decodeFileData = null;
+                            try {
+                                decodeFileData = Base64.getDecoder().decode(receivedString.getBytes());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            } finally {
+                                FileOutputStream fos = new FileOutputStream("./src/main/resources/data/" + receivedFileName);
+                                assert decodeFileData != null;
+                                fos.write(decodeFileData);
+                                fos.close();
+                            }
+                        }
+//                        if (tokens[1].equals("REMAIN")) {
+//                            this.receivedFile += received.substring("SEND_FILE|REMAIN|".length());
+//                        } else {
+//                            this.receivedFile += received.substring("SEND_FILE|END|".length());
+//                            byte[] decodeFileData = Base64.getDecoder().decode(this.receivedFile.getBytes());
+//                            FileOutputStream fos = new FileOutputStream("./src/main/resources/data/test.jpg");
+//                            fos.write(decodeFileData);
+//                            fos.close();
+//                        }
                         break;
                     default:
                         break;
