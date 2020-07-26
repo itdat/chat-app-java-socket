@@ -66,6 +66,16 @@ public class MainFrame extends RoundedJFrame {
                                 pnlConversation.repaint();
                             }
                             break;
+                        case "MESSAGE_FILE":
+                            String messageFile = tokens[1];
+                            String senderFile = tokens[2];
+                            pushHistoryConversation(username, senderFile, senderFile + ":" + messageFile);
+                            if (senderFile.equals(currentRecipient)) {
+                                pnlConversation.addClickableBubbleChatReceive(messageFile);
+                                pnlConversation.revalidate();
+                                pnlConversation.repaint();
+                            }
+                            break;
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -341,12 +351,24 @@ public class MainFrame extends RoundedJFrame {
         List<String> conversation = getHistoryConversation(username, currentRecipient);
         for (String message : conversation) {
             if (message.startsWith(username)) {
-                pnlConversation.addBubbleChat(message.substring(username.length()+1));
+                if (message.contains("title='file:")) {
+                    pnlConversation.addClickableBubbleChat(message.substring(username.length()+1));
+                } else {
+                    pnlConversation.addBubbleChat(message.substring(username.length()+1));
+                }
                 if (message.startsWith(currentRecipient)) {
-                    pnlConversation.addBubbleChatReceive(message.substring(currentRecipient.length()+1));
+                    if (message.contains("title='file:")) {
+                        pnlConversation.addClickableBubbleChatReceive(message.substring(currentRecipient.length()+1));
+                    } else {
+                        pnlConversation.addBubbleChatReceive(message.substring(currentRecipient.length()+1));
+                    }
                 }
             } else {
-                pnlConversation.addBubbleChatReceive(message.substring(currentRecipient.length()+1));
+                if (message.contains("title='file:")) {
+                    pnlConversation.addClickableBubbleChatReceive(message.substring(currentRecipient.length()+1));
+                } else {
+                    pnlConversation.addBubbleChatReceive(message.substring(currentRecipient.length()+1));
+                }
             }
         }
     }

@@ -2,6 +2,10 @@ package com.ntdat.chatapp.ui.fragment;
 
 import com.ntdat.chatapp.Main;
 import com.ntdat.chatapp.ui.customcomponent.*;
+import com.ntdat.chatapp.utilities.GFG;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -17,10 +21,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
+import java.util.*;
 import java.util.List;
+
+import static com.ntdat.chatapp.utilities.GFG.getSHA;
 
 public class ConversationPanel extends JPanel {
     // DEFINE VALUES
@@ -268,26 +274,60 @@ public class ConversationPanel extends JPanel {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 if (evt.getKeyCode()== KeyEvent.VK_ENTER) {
                     if (chosenFile != null) {
+                        Date date = new Date();
+                        String inputHash = new Timestamp(date.getTime()).toString() + username + recipient;
+                        String hash = "";
                         try {
-                            DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-                            byte[] fileDataByte = Files.readAllBytes(chosenFile.toPath());
-                            byte[] encodeDataByte = Base64.getEncoder().withoutPadding().encode(fileDataByte);
-                            String encodeDataString = new String(encodeDataByte);
-                            dos.writeUTF("SEND_FILE|INFO|" + chosenFile.getName().replaceAll("\\|","_"));
-                            while (encodeDataString.length() > 4096) {
-                                String subString = encodeDataString.substring(0, 4096);
-                                dos.writeUTF("SEND_FILE|REMAIN|" + subString);
-                                encodeDataString = encodeDataString.substring(4096);
-                            }
-                            dos.writeUTF("SEND_FILE|END|" + encodeDataString);
-                            SwingUtilities.invokeLater(() -> {
-                                chosenFile = null;
-                                edtInputChat.setText("");
-                                edtInputChat.setForeground(Color.decode("#525252"));
-                            });
-                        } catch (IOException e) {
+                            hash = GFG.toHexString(getSHA(inputHash));
+                        } catch (NoSuchAlgorithmException e) {
                             e.printStackTrace();
                         }
+
+                        String finalHash = hash;
+                        Thread uploadFile = new Thread(()-> {
+                            DataOutputStream dos = null;
+                            try {
+                                dos = new DataOutputStream(socket.getOutputStream());
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            byte[] fileDataByte = new byte[0];
+                            try {
+                                fileDataByte = Files.readAllBytes(chosenFile.toPath());
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            byte[] encodeDataByte = Base64.getEncoder().withoutPadding().encode(fileDataByte);
+                            String encodeDataString = new String(encodeDataByte);
+                            try {
+                                dos.writeUTF("SEND_FILE|INFO|" + chosenFile.getName() + "|" + finalHash);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            while (encodeDataString.length() > 4096) {
+                                String subString = encodeDataString.substring(0, 4096);
+                                try {
+                                    dos.writeUTF("SEND_FILE|REMAIN|" + subString);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                encodeDataString = encodeDataString.substring(4096);
+                            }
+                            try {
+                                dos.writeUTF("SEND_FILE|END|" + encodeDataString);
+                                dos.writeUTF("SEND_FILE|SIGN|" + chosenFile.getName() + "|" + recipient + "|" + username);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            chosenFile = null;
+                        });
+
+                        addClickableBubbleChat("<b style='color:yellow' title='file:" + hash + "'>" + chosenFile.getName() + "</b>");
+                        uploadFile.start();
+                        SwingUtilities.invokeLater(() -> {
+                            edtInputChat.setText("");
+                            edtInputChat.setForeground(Color.decode("#525252"));
+                        });
                     } else {
                         addBubbleChat(edtInputChat.getText());
                         try {
@@ -305,20 +345,24 @@ public class ConversationPanel extends JPanel {
                             edtInputChat.setText("");
                         });
                     }
+                } else {
+                    chosenFile = null;
+                    SwingUtilities.invokeLater(() -> {
+                        edtInputChat.setForeground(Color.decode("#525252"));
+                    });
                 }
             }
         });
-
-//        SwingUtilities.invokeLater(() -> {
-//            Dimension vpSize = splConversationContent.getViewport().getExtentSize();
-//            Dimension logSize = pnlConversationContent.getSize();
-//            int height = logSize.height - vpSize.height;
-//            splConversationContent.getViewport().setViewPosition(new Point(0, height));
-//        });
     }
 
     private String breakLongWords(String content) {
-        List<String> words = new ArrayList<>(Arrays.asList(content.split(" ")));
+        String handleContent = content;
+        if (content.startsWith("<b style='color:yellow' title='file:")) {
+            Document doc = Jsoup.parse(content);
+            Element b = doc.select("b").first();
+            handleContent = b.text();
+        }
+        List<String> words = new ArrayList<>(Arrays.asList(handleContent.split(" ")));
         FontMetrics fontMetrics = getFontMetrics(DEFAULT_FONT);
         for (int i = 0; i < words.size(); i++) {
             String word = words.get(i);
@@ -337,7 +381,16 @@ public class ConversationPanel extends JPanel {
                 words.set(i, String.join("<br/>", brkWord));
             }
         }
-        return String.join(" ", words);
+
+        if (content.startsWith("<b style='color:yellow' title='file:")) {
+            Document doc = Jsoup.parse(content);
+            Element b = doc.select("b").first();
+            String oldContent = b.text();
+            content.replace(oldContent, String.join(" ", words));
+        } else {
+            content = String.join(" ", words);
+        }
+        return content;
     }
 
     public void addBubbleChat(String content) {
@@ -374,6 +427,50 @@ public class ConversationPanel extends JPanel {
         });
     }
 
+    public void addClickableBubbleChat(String content) {
+        JLabel txtBubbleContent = new JLabel();
+        txtBubbleContent.setFont(DEFAULT_FONT);
+        txtBubbleContent.setText("<html><div style='width: 400px'>" + breakLongWords(content) + "</div></html>");
+        System.out.println(breakLongWords(content));
+        txtBubbleContent.setForeground(Color.YELLOW);
+        txtBubbleContent.setVerticalAlignment(javax.swing.SwingConstants.TOP);
+        RoundedPanel pnlBubble = new RoundedPanel(20);
+        pnlBubble.add(txtBubbleContent);
+        pnlBubble.setBackground(Color.decode("#4D599F"));
+        pnlBubble.setBorder(new EmptyBorder(10,10,10,10));
+        JPanel pnlAlignedBubble = new JPanel();
+        pnlAlignedBubble.setOpaque(false);
+        pnlAlignedBubble.setLayout(new BorderLayout());
+        pnlAlignedBubble.add(pnlBubble, BorderLayout.EAST);
+
+        pnlConversationContentHorizontalGroup.addComponent(pnlAlignedBubble, GroupLayout.PREFERRED_SIZE, 990, GroupLayout.PREFERRED_SIZE);
+        pnlConversationContentVerticalGroup
+                .addComponent(pnlAlignedBubble,GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addGap(5);
+
+        this.pnlConversationContent.revalidate();
+        this.splConversationContent.revalidate();
+        this.pnlConversationContent.repaint();
+        this.splConversationContent.repaint();
+
+        pnlBubble.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                bubbleClickHandler();
+            }
+        });
+
+        SwingUtilities.invokeLater(() -> {
+            Dimension vpSize = splConversationContent.getViewport().getExtentSize();
+            Dimension logSize = pnlConversationContent.getSize();
+            int height = logSize.height - vpSize.height;
+            splConversationContent.getViewport().setViewPosition(new Point(0, height));
+        });
+    }
+
+    private void bubbleClickHandler() {
+        System.out.println("Bubble click");
+    }
+
     public void addBubbleChatReceive(String content) {
         JLabel txtBubbleContent = new JLabel();
         txtBubbleContent.setFont(DEFAULT_FONT);
@@ -397,6 +494,45 @@ public class ConversationPanel extends JPanel {
         this.splConversationContent.revalidate();
         this.pnlConversationContent.repaint();
         this.splConversationContent.repaint();
+
+        SwingUtilities.invokeLater(() -> {
+            Dimension vpSize = splConversationContent.getViewport().getExtentSize();
+            Dimension logSize = pnlConversationContent.getSize();
+            int height = logSize.height - vpSize.height;
+            splConversationContent.getViewport().setViewPosition(new Point(0, height));
+        });
+    }
+
+    public void addClickableBubbleChatReceive(String content) {
+        content = content.replace("style='color:yellow'", "style='color:#586692'");
+        JLabel txtBubbleContent = new JLabel();
+        txtBubbleContent.setFont(DEFAULT_FONT);
+        txtBubbleContent.setText("<html><div style='width: 400px'>" + breakLongWords(content) + "</div></html>");
+        System.out.println(breakLongWords(content));
+        txtBubbleContent.setVerticalAlignment(javax.swing.SwingConstants.TOP);
+        RoundedPanel pnlBubble = new RoundedPanel(20);
+        pnlBubble.add(txtBubbleContent);
+        pnlBubble.setBorder(new EmptyBorder(10,10,10,10));
+        JPanel pnlAlignedBubble = new JPanel();
+        pnlAlignedBubble.setOpaque(false);
+        pnlAlignedBubble.setLayout(new BorderLayout());
+        pnlAlignedBubble.add(pnlBubble, BorderLayout.WEST);
+
+        pnlConversationContentHorizontalGroup.addComponent(pnlAlignedBubble, GroupLayout.PREFERRED_SIZE, 990, GroupLayout.PREFERRED_SIZE);
+        pnlConversationContentVerticalGroup
+                .addComponent(pnlAlignedBubble,GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addGap(5);
+
+        this.pnlConversationContent.revalidate();
+        this.splConversationContent.revalidate();
+        this.pnlConversationContent.repaint();
+        this.splConversationContent.repaint();
+
+        pnlBubble.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                bubbleClickHandler();
+            }
+        });
 
         SwingUtilities.invokeLater(() -> {
             Dimension vpSize = splConversationContent.getViewport().getExtentSize();

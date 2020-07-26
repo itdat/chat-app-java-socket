@@ -75,6 +75,7 @@ class ClientHandler implements Runnable
     boolean isloggedin;
     private List<String> receivedFile = new ArrayList<>();
     private String receivedFileName;
+    private String hashName;
 
     // constructor
     public ClientHandler(Socket s, String name,
@@ -215,10 +216,11 @@ class ClientHandler implements Runnable
                     case "SEND_FILE":
                         if (tokens[1].equals("INFO")) {
                             this.receivedFileName = tokens[2];
+                            this.hashName = tokens[3];
                         } else if (tokens[1].equals("REMAIN")) {
                             String msg = received.substring("SEND_FILE|REMAIN|".length());
                             receivedFile.add(msg);
-                        } else {
+                        } else if (tokens[1].equals("END")) {
                             String msg = received.substring("SEND_FILE|END|".length());
                             receivedFile.add(msg);
                             String receivedString = String.join("", receivedFile);
@@ -228,21 +230,21 @@ class ClientHandler implements Runnable
                             } catch (Exception e) {
                                 e.printStackTrace();
                             } finally {
-                                FileOutputStream fos = new FileOutputStream("./src/main/resources/data/" + receivedFileName);
+                                FileOutputStream fos = new FileOutputStream("./src/main/resources/data/" + hashName);
                                 assert decodeFileData != null;
                                 fos.write(decodeFileData);
                                 fos.close();
                             }
+                        } else {
+                            String recipientFile = tokens[3];
+                            String senderFile = tokens[4];
+                            for (ClientHandler client : Server.ar) {
+                                if (client.name.equals(recipientFile)) {
+                                    client.dos.writeUTF("MESSAGE_FILE|<b style='color:yellow' title='file:" + hashName + "'>" + this.receivedFileName + "</b>|" + senderFile);
+                                    break;
+                                }
+                            }
                         }
-//                        if (tokens[1].equals("REMAIN")) {
-//                            this.receivedFile += received.substring("SEND_FILE|REMAIN|".length());
-//                        } else {
-//                            this.receivedFile += received.substring("SEND_FILE|END|".length());
-//                            byte[] decodeFileData = Base64.getDecoder().decode(this.receivedFile.getBytes());
-//                            FileOutputStream fos = new FileOutputStream("./src/main/resources/data/test.jpg");
-//                            fos.write(decodeFileData);
-//                            fos.close();
-//                        }
                         break;
                     default:
                         break;
