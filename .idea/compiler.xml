@@ -7,6 +7,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="chat-app-java-socket" />
+        <module name="chat-app-server" />
         <module name="ChatApp" />
       </profile>
     </annotationProcessing>

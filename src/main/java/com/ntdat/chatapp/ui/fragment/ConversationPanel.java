@@ -1,6 +1,7 @@
 package com.ntdat.chatapp.ui.fragment;
 
 import com.ntdat.chatapp.Main;
+import com.ntdat.chatapp.ui.Login;
 import com.ntdat.chatapp.ui.customcomponent.*;
 import com.ntdat.chatapp.utilities.GFG;
 import org.jsoup.Jsoup;
@@ -15,12 +16,12 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.util.*;
@@ -42,6 +43,12 @@ public class ConversationPanel extends JPanel {
     private String username;
     private String recipient;
     private File chosenFile = null;
+
+    private String emoji1;
+    private String emoji2;
+    private String emoji3;
+    private String emoji4;
+    private String emoji5;
 
     public ConversationPanel(Socket socket, String username, String recipient) {
         this.socket = socket;
@@ -129,6 +136,9 @@ public class ConversationPanel extends JPanel {
         splInputChat.setViewportView(edtInputChat);
         splInputChat.setBorder(new EmptyBorder(0,0,0,0));
         splInputChat.getVerticalScrollBar().setUI(new MyScrollbarUI(new Color(238,238,238), new Color(100,100,100)));
+
+
+
         RoundedPanel pnlBoundInputChat = new RoundedPanel(50);
         pnlBoundInputChat.setBackground(Color.decode("#EEEEEE"));
         GroupLayout inputChatLayout = new GroupLayout(pnlBoundInputChat);
@@ -167,6 +177,120 @@ public class ConversationPanel extends JPanel {
         splConversationContent.setBorder(new EmptyBorder(0,0,0,0));
         splConversationContent.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         splConversationContent.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+
+
+
+        JLabel emoji1 = new JLabel();
+        emoji1.setPreferredSize(new Dimension(40,40));
+        emoji1.setIcon(new ImageIcon(new javax.swing.ImageIcon(getClass().getResource("/emoji_images/emoji_1.png")).getImage().getScaledInstance(40,40, Image.SCALE_DEFAULT)));
+        emoji1.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                addBubbleChat("<img src='./data/icon/emoji_1.png' width='30' height='30'/>");
+                try {
+                    DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+                    String msg = edtInputChat.getText();
+                    try {
+                        dos.writeUTF("SEND|" + recipient +"|" + msg + "|" + username);
+                    } catch (IOException evt) {
+                        evt.printStackTrace();
+                    }
+                } catch (IOException evt) {
+                    evt.printStackTrace();
+                }
+            }
+        });
+
+        JLabel emoji2 = new JLabel();
+        emoji2.setPreferredSize(new Dimension(40,40));
+        emoji2.setIcon(new ImageIcon(new javax.swing.ImageIcon(getClass().getResource("/emoji_images/emoji_2.png")).getImage().getScaledInstance(40,40, Image.SCALE_DEFAULT)));
+        emoji2.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                addBubbleChat("<img src='./data/icon/emoji_2.png' width='30' height='30'/>");
+                try {
+                    DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+                    String msg = edtInputChat.getText();
+                    try {
+                        dos.writeUTF("SEND|" + recipient +"|" + msg + "|" + username);
+                    } catch (IOException evt) {
+                        evt.printStackTrace();
+                    }
+                } catch (IOException evt) {
+                    evt.printStackTrace();
+                }            }
+        });
+
+        JLabel emoji3 = new JLabel();
+        emoji3.setPreferredSize(new Dimension(40,40));
+        emoji3.setIcon(new ImageIcon(new javax.swing.ImageIcon(getClass().getResource("/emoji_images/emoji_3.png")).getImage().getScaledInstance(40,40, Image.SCALE_DEFAULT)));
+        emoji3.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                addBubbleChat("<img src='./data/icon/emoji_3.png' width='30' height='30'/>");
+                try {
+                    DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+                    String msg = edtInputChat.getText();
+                    try {
+                        dos.writeUTF("SEND|" + recipient +"|" + msg + "|" + username);
+                    } catch (IOException evt) {
+                        evt.printStackTrace();
+                    }
+                } catch (IOException evt) {
+                    evt.printStackTrace();
+                }            }
+        });
+
+        JLabel emoji4 = new JLabel();
+        emoji4.setPreferredSize(new Dimension(40,40));
+        emoji4.setIcon(new ImageIcon(new javax.swing.ImageIcon(getClass().getResource("/emoji_images/emoji_4.png")).getImage().getScaledInstance(40,40, Image.SCALE_DEFAULT)));
+        emoji4.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                addBubbleChat("<img src='./data/icon/emoji_4.png' width='30' height='30'/>");
+                try {
+                    DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+                    String msg = edtInputChat.getText();
+                    try {
+                        dos.writeUTF("SEND|" + recipient +"|" + msg + "|" + username);
+                    } catch (IOException evt) {
+                        evt.printStackTrace();
+                    }
+                } catch (IOException evt) {
+                    evt.printStackTrace();
+                }            }
+        });
+
+        JLabel emoji5 = new JLabel();
+        emoji5.setPreferredSize(new Dimension(40,40));
+        emoji5.setIcon(new ImageIcon(new javax.swing.ImageIcon(getClass().getResource("/emoji_images/emoji_5.png")).getImage().getScaledInstance(40,40, Image.SCALE_DEFAULT)));
+        emoji5.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                addBubbleChat("<img src='./data/icon/emoji_5.png' width='30' height='30'/>");
+                try {
+                    DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+                    String msg = edtInputChat.getText();
+                    try {
+                        dos.writeUTF("SEND|" + recipient +"|" + msg + "|" + username);
+                    } catch (IOException evt) {
+                        evt.printStackTrace();
+                    }
+                } catch (IOException evt) {
+                    evt.printStackTrace();
+                }            }
+        });
+
+        JPanel emojiPanel = new JPanel();
+        emojiPanel.setLayout(new BoxLayout(emojiPanel, BoxLayout.X_AXIS));
+        emojiPanel.add(emoji1);
+        emojiPanel.add(Box.createRigidArea(new Dimension(5,5)));
+        emojiPanel.add(emoji2);
+        emojiPanel.add(Box.createRigidArea(new Dimension(5,5)));
+        emojiPanel.add(emoji3);
+        emojiPanel.add(Box.createRigidArea(new Dimension(5,5)));
+        emojiPanel.add(emoji4);
+        emojiPanel.add(Box.createRigidArea(new Dimension(5,5)));
+        emojiPanel.add(emoji5);
+
+        emojiPanel.setVisible(false);
+
+
         // Add to Conversation panel
         RoundedPanel pnlConversation = new RoundedPanel(20);
         pnlConversation.setBackground(Color.WHITE);
@@ -181,7 +305,10 @@ public class ConversationPanel extends JPanel {
                                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(icoPickPicture)
                                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(pnlBoundInputChat, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                .addGroup(conversationPanelLayout.createParallelGroup(GroupLayout.Alignment.CENTER)
+                                        .addComponent(emojiPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE)
+                                        .addComponent(pnlBoundInputChat, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                )
                                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(icoSend)
                                 .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -196,6 +323,8 @@ public class ConversationPanel extends JPanel {
                                 .addComponent(pnlConversationName, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(splConversationContent)
+                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(emojiPanel,40,40,40)
                                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(conversationPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
                                         .addComponent(icoPickPicture, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -266,6 +395,25 @@ public class ConversationPanel extends JPanel {
                     edtInputChat.setForeground(Main.PANEL_BACKGROUND_COLOR);
                     edtInputChat.setText(fileChooser.getSelectedFile().getName());
                     edtInputChat.requestFocusInWindow();
+                }
+            }
+        });
+
+        icoPickEmoji.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                emojiPanel.setVisible(!emojiPanel.isVisible());
+            }
+        });
+
+        btnLogout.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                try {
+                    DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+                    dos.writeUTF("LOGOUT");
+                } catch (IOException evt) {
+                    evt.printStackTrace();
+                } finally {
+                    logOut();
                 }
             }
         });
@@ -355,6 +503,56 @@ public class ConversationPanel extends JPanel {
         });
     }
 
+    private void logOut() {
+        JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        Login login = new Login();
+        login.setVisible(true);
+        topFrame.dispose();
+    }
+
+    private void initEmoji() {
+        URL res = getClass().getClassLoader().getResource("emoji_1.png");
+        File file = null;
+        try {
+            file = Paths.get(res.toURI()).toFile();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        emoji1 = "<img src='" + file.getAbsolutePath() + "' width='30' height='30'/>";
+        res = getClass().getClassLoader().getResource("emoji_2.png");
+        file = null;
+        try {
+            file = Paths.get(res.toURI()).toFile();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        emoji2 = "<img src='" + file.getAbsolutePath() + "' width='30' height='30'/>";
+        res = getClass().getClassLoader().getResource("emoji_3.png");
+        file = null;
+        try {
+            file = Paths.get(res.toURI()).toFile();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        emoji3 = "<img src='" + file.getAbsolutePath() + "' width='30' height='30'/>";
+        res = getClass().getClassLoader().getResource("emoji_4.png");
+        file = null;
+        try {
+            file = Paths.get(res.toURI()).toFile();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        emoji4 = "<img src='" + file.getAbsolutePath() + "' width='30' height='30'/>";
+        res = getClass().getClassLoader().getResource("emoji_5.png");
+        file = null;
+        try {
+            file = Paths.get(res.toURI()).toFile();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        emoji5 = "<img src='" + file.getAbsolutePath() + "' width='30' height='30'/>";
+    }
+
     private String breakLongWords(String content) {
         String handleContent = content;
         if (content.startsWith("<b style='color:yellow' title='file:")) {
@@ -397,7 +595,6 @@ public class ConversationPanel extends JPanel {
         JLabel txtBubbleContent = new JLabel();
         txtBubbleContent.setFont(DEFAULT_FONT);
         txtBubbleContent.setText("<html><div style='width: 400px'>" + breakLongWords(content) + "</div></html>");
-        System.out.println(breakLongWords(content));
         txtBubbleContent.setForeground(Color.WHITE);
         txtBubbleContent.setVerticalAlignment(javax.swing.SwingConstants.TOP);
         RoundedPanel pnlBubble = new RoundedPanel(20);
@@ -428,10 +625,14 @@ public class ConversationPanel extends JPanel {
     }
 
     public void addClickableBubbleChat(String content) {
+        Document doc = Jsoup.parse(content);
+        Element b = doc.select("b").first();
+        String fileName = b.text();
+        String hashName = b.attr("title").substring(5);
+
         JLabel txtBubbleContent = new JLabel();
         txtBubbleContent.setFont(DEFAULT_FONT);
         txtBubbleContent.setText("<html><div style='width: 400px'>" + breakLongWords(content) + "</div></html>");
-        System.out.println(breakLongWords(content));
         txtBubbleContent.setForeground(Color.YELLOW);
         txtBubbleContent.setVerticalAlignment(javax.swing.SwingConstants.TOP);
         RoundedPanel pnlBubble = new RoundedPanel(20);
@@ -455,7 +656,27 @@ public class ConversationPanel extends JPanel {
 
         pnlBubble.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                bubbleClickHandler();
+                try {
+                    JFileChooser chooser = new JFileChooser();
+                    chooser.setCurrentDirectory(new java.io.File("."));
+                    chooser.setDialogTitle("Chọn thư mục lưu file");
+                    chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    chooser.setAcceptAllFileFilterUsed(false);
+                    if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                        System.out.println("getCurrentDirectory(): "
+                                +  chooser.getCurrentDirectory());
+                        System.out.println("getSelectedFile() : "
+                                +  chooser.getSelectedFile());
+                        DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+                        dos.writeUTF("GET_FILE|" + chooser.getSelectedFile().getAbsolutePath() + "/" + fileName + "|" + hashName);
+                        ////
+                    }
+                    else {
+                        System.out.println("No Selection ");
+                    }
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
             }
         });
 
@@ -467,15 +688,10 @@ public class ConversationPanel extends JPanel {
         });
     }
 
-    private void bubbleClickHandler() {
-        System.out.println("Bubble click");
-    }
-
     public void addBubbleChatReceive(String content) {
         JLabel txtBubbleContent = new JLabel();
         txtBubbleContent.setFont(DEFAULT_FONT);
         txtBubbleContent.setText("<html><div style='width: 400px'>" + breakLongWords(content) + "</div></html>");
-        System.out.println(breakLongWords(content));
         txtBubbleContent.setVerticalAlignment(javax.swing.SwingConstants.TOP);
         RoundedPanel pnlBubble = new RoundedPanel(20);
         pnlBubble.add(txtBubbleContent);
@@ -505,10 +721,14 @@ public class ConversationPanel extends JPanel {
 
     public void addClickableBubbleChatReceive(String content) {
         content = content.replace("style='color:yellow'", "style='color:#586692'");
+        Document doc = Jsoup.parse(content);
+        Element b = doc.select("b").first();
+        String fileName = b.text();
+        String hashName = b.attr("title").substring(5);
+
         JLabel txtBubbleContent = new JLabel();
         txtBubbleContent.setFont(DEFAULT_FONT);
         txtBubbleContent.setText("<html><div style='width: 400px'>" + breakLongWords(content) + "</div></html>");
-        System.out.println(breakLongWords(content));
         txtBubbleContent.setVerticalAlignment(javax.swing.SwingConstants.TOP);
         RoundedPanel pnlBubble = new RoundedPanel(20);
         pnlBubble.add(txtBubbleContent);
@@ -530,7 +750,27 @@ public class ConversationPanel extends JPanel {
 
         pnlBubble.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                bubbleClickHandler();
+                try {
+                    JFileChooser chooser = new JFileChooser();
+                    chooser.setCurrentDirectory(new java.io.File("."));
+                    chooser.setDialogTitle("Chọn thư mục lưu file");
+                    chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    chooser.setAcceptAllFileFilterUsed(false);
+                    if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                        System.out.println("getCurrentDirectory(): "
+                                +  chooser.getCurrentDirectory());
+                        System.out.println("getSelectedFile() : "
+                                +  chooser.getSelectedFile());
+                        DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+                        dos.writeUTF("GET_FILE|" + chooser.getSelectedFile().getAbsolutePath() + "/" + fileName + "|" + hashName);
+                        ////
+                    }
+                    else {
+                        System.out.println("No Selection ");
+                    }
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
             }
         });
 

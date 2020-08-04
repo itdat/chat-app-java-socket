@@ -1,90 +1,67 @@
 package com.ntdat.chatapp.socket;
 
+import com.ntdat.chatapp.AppConfig;
 import com.ntdat.chatapp.data.User;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
+
+import static com.ntdat.chatapp.AppConfig.*;
 
 public class Server
 {
-    // Vector to store active clients
-    static Vector<ClientHandler> ar = new Vector<>();
+    static Vector<ClientHandler> activeList = new Vector<>();
     static List<User> userList = new ArrayList<>();
-
-    // counter for clients
     static int i = 0;
-
     public static void main(String[] args) throws IOException
     {
-        // server is listening on port 1234
-        ServerSocket ss = new ServerSocket(1234);
+        // Init directory
+        File dataDirectory = new File(DATA_DIRECTORY);
+        dataDirectory.mkdirs();
 
+        ServerSocket ss = new ServerSocket(SERVER_PORT);
+        System.out.println("Sever start on port " + SERVER_PORT);
+        System.out.println("Waiting for client request...");
         Socket s;
-
-        // running infinite loop for getting
-        // client request
         while (true)
         {
-            // Accept the incoming request
             s = ss.accept();
-
             System.out.println("New client request received : " + s);
-
-            // obtain input and output streams
+            
             DataInputStream dis = new DataInputStream(s.getInputStream());
             DataOutputStream dos = new DataOutputStream(s.getOutputStream());
 
             System.out.println("Creating a new handler for this client...");
-
-            // Create a new handler object for handling this request.
-            ClientHandler mtch = new ClientHandler(s,"client " + i, dis, dos);
-
-            // Create a new Thread with this object.
-            Thread t = new Thread(mtch);
-
-//            System.out.println("Adding this client to active client list");
-
-            // add this client to active clients list
-//            ar.add(mtch);
-
-            // start the thread.
+            
+            ClientHandler clientHandler = new ClientHandler(s,"client " + i, dis, dos);
+            Thread t = new Thread(clientHandler);
             t.start();
 
-            // increment i for new client.
-            // i is used for naming only, and can be replaced
-            // by any naming scheme
             i++;
-
         }
     }
 }
 
-// ClientHandler class
 class ClientHandler implements Runnable
 {
-    private static final String USER_LIST_DATA_PATH = "./src/main/resources/data/user-list.dat";
-
-    Scanner scn = new Scanner(System.in);
+    Socket s;
     private String name;
     final DataInputStream dis;
     final DataOutputStream dos;
-    Socket s;
-    boolean isloggedin;
+
     private List<String> receivedFile = new ArrayList<>();
     private String receivedFileName;
     private String hashName;
 
-    // constructor
-    public ClientHandler(Socket s, String name,
-                         DataInputStream dis, DataOutputStream dos) {
+    public ClientHandler(Socket s, String name, DataInputStream dis, DataOutputStream dos) {
+        this.s = s;
+        this.name = name;
         this.dis = dis;
         this.dos = dos;
-        this.name = name;
-        this.s = s;
-        this.isloggedin=true;
     }
 
     private void setName(String name) {
@@ -92,19 +69,20 @@ class ClientHandler implements Runnable
     }
 
     private void loadUserList() {
-        ObjectInputStream ois = null;
+        ObjectInputStream ois;
         try {
-            ois = new ObjectInputStream(new FileInputStream(USER_LIST_DATA_PATH));
+            ois = new ObjectInputStream(new FileInputStream(AppConfig.USER_LIST_DATA_PATH));
             Server.userList = (List<User>) ois.readObject();
+            ois.close();
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
-
     }
 
     private void storeUserList() throws IOException {
-        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(USER_LIST_DATA_PATH));
+        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(AppConfig.USER_LIST_DATA_PATH));
         oos.writeObject(Server.userList);
+        oos.close();
     }
 
     @Override
@@ -115,32 +93,27 @@ class ClientHandler implements Runnable
         {
             try
             {
-                // receive the string
                 received = dis.readUTF();
-
                 System.out.println(received);
-
                 String[] tokens = received.split("\\|");
-
                 List<String> usernames;
                 String newOnlineList;
-
                 switch (tokens[0]) {
                     case "LOGOUT":
-                        for (int i = 0; i < Server.ar.size(); i++) {
-                            if (Server.ar.get(i).s == this.s) {
-                                Server.ar.remove(i);
+                        for (int i = 0; i < Server.activeList.size(); i++) {
+                            if (Server.activeList.get(i).s == this.s) {
+                                Server.activeList.remove(i);
                                 this.s.close();
                                 break;
                             }
                         }
-                        System.out.println("Deleted " + this.name + " from active list");
+                        System.out.println(this.name + " log out");
                         usernames = new ArrayList<>();
-                        for (ClientHandler client : Server.ar) {
+                        for (ClientHandler client : Server.activeList) {
                             usernames.add(client.name);
                         }
                         newOnlineList = String.join(",", usernames);
-                        for (ClientHandler client : Server.ar) {
+                        for (ClientHandler client : Server.activeList) {
                             client.dos.writeUTF("UPDATE_ONLINE_LIST|" + newOnlineList);
                         }
                         break;
@@ -188,16 +161,16 @@ class ClientHandler implements Runnable
                         }
                         break;
                     case "READY":
-                        Server.ar.add(this);
-                        System.out.println("Added " + this.name + " to active list");
+                        Server.activeList.add(this);
+                        System.out.println(this.name + " log in");
 
                         usernames = new ArrayList<>();
-                        for (ClientHandler client : Server.ar) {
+                        for (ClientHandler client : Server.activeList) {
                             usernames.add(client.name);
                         }
                         newOnlineList = String.join(",", usernames);
 
-                        for (ClientHandler client : Server.ar) {
+                        for (ClientHandler client : Server.activeList) {
                             client.dos.writeUTF("UPDATE_ONLINE_LIST|" + newOnlineList);
                         }
                         break;
@@ -206,7 +179,7 @@ class ClientHandler implements Runnable
                         String recipient = tokens[1];
                         String message = tokens[2];
                         String sender = tokens[3];
-                        for (ClientHandler client : Server.ar) {
+                        for (ClientHandler client : Server.activeList) {
                             if (client.name.equals(recipient)) {
                                 client.dos.writeUTF("MESSAGE|" + message + "|" + sender);
                                 break;
@@ -238,13 +211,32 @@ class ClientHandler implements Runnable
                         } else {
                             String recipientFile = tokens[3];
                             String senderFile = tokens[4];
-                            for (ClientHandler client : Server.ar) {
+                            for (ClientHandler client : Server.activeList) {
                                 if (client.name.equals(recipientFile)) {
                                     client.dos.writeUTF("MESSAGE_FILE|<b style='color:yellow' title='file:" + hashName + "'>" + this.receivedFileName + "</b>|" + senderFile);
                                     break;
                                 }
                             }
                         }
+                        break;
+                    case "GET_FILE":
+                        String fileName = tokens[1];
+                        String hashName = tokens[2];
+                        DataOutputStream dos = new DataOutputStream(s.getOutputStream());
+                        byte[] fileDataByte = Files.readAllBytes(Paths.get("./src/main/resources/data/" + hashName));
+                        byte[] encodeDataByte = Base64.getEncoder().withoutPadding().encode(fileDataByte);
+                        String encodeDataString = new String(encodeDataByte);
+                        dos.writeUTF("DELIVER|INFO|" + fileName);
+                        while (encodeDataString.length() > 4096) {
+                            String subString = encodeDataString.substring(0, 4096);
+                            try {
+                                dos.writeUTF("DELIVER|REMAIN|" + subString);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            encodeDataString = encodeDataString.substring(4096);
+                        }
+                        dos.writeUTF("DELIVER|END|" + encodeDataString);
                         break;
                     default:
                         break;

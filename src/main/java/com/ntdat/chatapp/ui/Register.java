@@ -5,6 +5,7 @@
  */
 package com.ntdat.chatapp.ui;
 
+import com.ntdat.chatapp.AppConfig;
 import com.ntdat.chatapp.Main;
 import com.ntdat.chatapp.ui.customcomponent.*;
 import com.ntdat.chatapp.utilities.SetTimeOut;
@@ -360,23 +361,20 @@ public class Register extends RoundedJFrame {
             if (!password.equals(confirmPassword)) {
                 raiseError("<html>Mật khẩu xác nhận không khớp " + img1 + "</html>");
             } else {
-                // getting localhost ip
                 InetAddress ip = null;
                 try {
-                    ip = InetAddress.getByName("localhost");
+                    ip = InetAddress.getByName(AppConfig.getIpServer());
                 } catch (UnknownHostException e) {
                     e.printStackTrace();
                 }
 
-                // establish the connection
                 Socket s = null;
                 try {
-                    s = new Socket(ip, ServerPort);
+                    s = new Socket(ip, AppConfig.SERVER_PORT);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
 
-                // obtaining input and out streams
                 try {
                     assert s != null;
                     DataInputStream dis = new DataInputStream(s.getInputStream());

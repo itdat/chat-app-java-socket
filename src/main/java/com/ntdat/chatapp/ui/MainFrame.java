@@ -25,6 +25,10 @@ public class MainFrame extends RoundedJFrame {
     // DEFINE VALUES
     private static final Font DEFAULT_FONT = new Font("Roboto", Font.PLAIN, 18);
     private static final Color PANEL_BACKGROUND_COLOR = Color.decode("#586692");
+    private static final Color MOUSE_HOVER_NAV_BUTTON = new Color(51, 74, 137);
+    private static final Color MOUSE_PRESS_NAV_BUTTON = new Color(36,55,114);
+    private static final Color DEFAULT_NAV_BUTTON = new Color(88,102,146);
+
 
     private Socket socket;
     private String username;
@@ -33,6 +37,14 @@ public class MainFrame extends RoundedJFrame {
     private JPanel onlineList = new JPanel();
     private JPanel pnlMain;
     private ConversationPanel pnlConversation;
+
+    private String currentDownloadFileName;
+    private List<String> currentDownloadFile;
+
+    private List<String> activeUsers;
+    private int countHighLight = 0;
+
+    private List<String> currentConversation;
 
     public MainFrame(Socket socket, String username) throws IOException {
         this.socket = socket;
@@ -49,12 +61,13 @@ public class MainFrame extends RoundedJFrame {
                 try {
                     // read the message sent to this client
                     String msg = dis.readUTF();
-                    System.out.println(msg);
+//                    System.out.println(msg);
                     String[] tokens = msg.split("\\|");
                     switch (tokens[0]) {
                         case "UPDATE_ONLINE_LIST":
                             String[] users = tokens[1].split(",");
-                            updateOnlineList(users);
+                            activeUsers = Arrays.asList(users);
+                            updateOnlineList(activeUsers);
                             break;
                         case "MESSAGE":
                             String message = tokens[1];
@@ -64,6 +77,15 @@ public class MainFrame extends RoundedJFrame {
                                 pnlConversation.addBubbleChatReceive(message);
                                 pnlConversation.revalidate();
                                 pnlConversation.repaint();
+                            } else {
+//                                for (int i = 0; i < activeUsers.size(); i++) {
+//                                    if (activeUsers.get(i).equals(sender)) {
+//                                        activeUsers.remove(i);
+//                                        break;
+//                                    }
+//                                }
+//                                activeUsers.add(0, sender);
+//                                updateOnlineList(users);
                             }
                             break;
                         case "MESSAGE_FILE":
@@ -75,6 +97,54 @@ public class MainFrame extends RoundedJFrame {
                                 pnlConversation.revalidate();
                                 pnlConversation.repaint();
                             }
+                            break;
+                        case "DELIVER":
+                            if (tokens[1].equals("INFO")) {
+                                String fileName = tokens[2];
+                                this.currentDownloadFileName = fileName;
+                                this.currentDownloadFile = new ArrayList<>();
+                            } else if (tokens[1].equals("REMAIN")) {
+                                String data = msg.substring("DELIVER|REMAIN|".length());
+                                currentDownloadFile.add(data);
+                            } else {
+                                String data = msg.substring("DELIVER|END|".length());
+                                currentDownloadFile.add(data);
+                                String receivedString = String.join("", currentDownloadFile);
+                                byte[] decodeFileData = null;
+                                try {
+                                    decodeFileData = Base64.getDecoder().decode(receivedString.getBytes());
+                                } catch (Exception ec) {
+                                    ec.printStackTrace();
+                                } finally {
+                                    FileOutputStream fos = null;
+                                    try {
+                                        System.out.println(currentDownloadFileName);
+                                        fos = new FileOutputStream(currentDownloadFileName);
+                                    } catch (FileNotFoundException fileNotFoundException) {
+                                        fileNotFoundException.printStackTrace();
+                                    }
+                                    assert decodeFileData != null;
+                                    try {
+                                        fos.write(decodeFileData);
+                                        fos.close();
+                                    } catch (IOException ioException) {
+                                        ioException.printStackTrace();
+                                    }
+                                    break;
+                                }
+                            }
+                            break;
+                        case "CONVERSATION_HISTORY":
+                            String recipient = tokens[2];
+                            if (tokens.length == 4) {
+                                String conversation = tokens[3];
+                                System.out.println(tokens[3]);
+                                if (currentRecipient.equals(recipient)) {
+                                    currentConversation = Arrays.asList(conversation.split("#"));
+                                }
+                            }
+                            break;
+                        default:
                             break;
                     }
                 } catch (IOException e) {
@@ -267,6 +337,8 @@ public class MainFrame extends RoundedJFrame {
         // =========================================================================
         // =========================================================================
         // =========================================================================
+
+
         
         titleBar.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
             public void mouseDragged(java.awt.event.MouseEvent evt) {
@@ -312,24 +384,36 @@ public class MainFrame extends RoundedJFrame {
         });
     }
 
-    private void updateOnlineList(String[] users) {
+    private void updateOnlineList(List<String> users) {
         onlineList.removeAll();
         GroupLayout onlineListLayout = new GroupLayout(onlineList);
         onlineList.setLayout(onlineListLayout);
         GroupLayout.Group onlineListLayoutHorizontalGroup = onlineListLayout.createParallelGroup(GroupLayout.Alignment.LEADING);
         GroupLayout.Group onlineListLayoutVerticalGroup = onlineListLayout.createSequentialGroup();
 
+        int count = -1;
         for (String user : users) {
+            count++;
             FlatButton btn = new FlatButton();
+            if (count < countHighLight) {
+                btn.setColors(MOUSE_HOVER_NAV_BUTTON, MOUSE_PRESS_NAV_BUTTON, new Color(49, 68, 127));
+            } else {
+                btn.setColors(MOUSE_HOVER_NAV_BUTTON, MOUSE_PRESS_NAV_BUTTON, DEFAULT_NAV_BUTTON);
+            }
             btn.addMouseListener(new MouseAdapter() {
                 public void mouseClicked(MouseEvent e) {
                     currentRecipient = user;
                     pnlMain.removeAll();
                     pnlConversation = new ConversationPanel(socket, username, user);
                     pnlMain.add(pnlConversation);
-                    pnlMain.revalidate();
-                    pnlMain.repaint();
-                    loadHistoryConversation(username, currentRecipient);
+
+                    try {
+                        loadHistoryConversation(username, currentRecipient);
+                        pnlMain.revalidate();
+                        pnlMain.repaint();
+                    } catch (IOException ioException) {
+                        ioException.printStackTrace();
+                    }
                 }
             });
             btn.setFont(DEFAULT_FONT);
@@ -347,61 +431,42 @@ public class MainFrame extends RoundedJFrame {
         onlineList.repaint();
     }
 
-    private void loadHistoryConversation(String username, String currentRecipient) {
-        List<String> conversation = getHistoryConversation(username, currentRecipient);
-        for (String message : conversation) {
-            if (message.startsWith(username)) {
-                if (message.contains("title='file:")) {
-                    pnlConversation.addClickableBubbleChat(message.substring(username.length()+1));
+    private void loadHistoryConversation(String username, String currentRecipient) throws IOException {
+        getHistoryConversation(username, currentRecipient);
+        SwingUtilities.invokeLater(() -> {
+            for (String message : currentConversation) {
+                if (message.startsWith(username)) {
+                    if (message.contains("title='file:")) {
+                        pnlConversation.addClickableBubbleChat(message.substring(username.length()+1));
+                    } else {
+                        pnlConversation.addBubbleChat(message.substring(username.length()+1));
+                    }
+                    if (message.startsWith(currentRecipient)) {
+                        if (message.contains("title='file:")) {
+                            pnlConversation.addClickableBubbleChatReceive(message.substring(currentRecipient.length()+1));
+                        } else {
+                            pnlConversation.addBubbleChatReceive(message.substring(currentRecipient.length()+1));
+                        }
+                    }
                 } else {
-                    pnlConversation.addBubbleChat(message.substring(username.length()+1));
-                }
-                if (message.startsWith(currentRecipient)) {
                     if (message.contains("title='file:")) {
                         pnlConversation.addClickableBubbleChatReceive(message.substring(currentRecipient.length()+1));
                     } else {
                         pnlConversation.addBubbleChatReceive(message.substring(currentRecipient.length()+1));
                     }
                 }
-            } else {
-                if (message.contains("title='file:")) {
-                    pnlConversation.addClickableBubbleChatReceive(message.substring(currentRecipient.length()+1));
-                } else {
-                    pnlConversation.addBubbleChatReceive(message.substring(currentRecipient.length()+1));
-                }
             }
-        }
+        });
     }
 
-    private List<String> getHistoryConversation(String username, String currentRecipient) {
-        List<String> users = new ArrayList<>(Arrays.asList(username, currentRecipient));
-        Collections.sort(users);
-        String fileName = "./src/main/resources/data/conversations/" + String.join("-",users) + ".dat";
-        List<String> conversation = new ArrayList<>();
-        try {
-            ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fileName));
-            conversation = (List<String>) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            return conversation;
-        }
+    private void getHistoryConversation(String username, String currentRecipient) throws IOException {
+        DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+        dos.writeUTF("GET_CONVERSATION_HISTORY|" + username + "|" + currentRecipient);
     }
 
-    private void pushHistoryConversation(String username, String currentRecipient, String message) {
-        List<String> users = new ArrayList<>(Arrays.asList(username, currentRecipient));
-        Collections.sort(users);
-        String fileName = "./src/main/resources/data/conversations/" + String.join("-",users) + ".dat";
-        List<String> conversation = getHistoryConversation(username, currentRecipient);
-        conversation.add(message);
-        try {
-            ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fileName));
-            oos.writeObject(conversation);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private void pushHistoryConversation(String username, String currentRecipient, String message) throws IOException {
+        DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+        dos.writeUTF("PUSH_CONVERSATION_HISTORY|" + username + "|" + currentRecipient + "|" + message);
     }
 
     private void moveFrame(java.awt.event.MouseEvent evt) {
@@ -435,10 +500,10 @@ public class MainFrame extends RoundedJFrame {
         try {
             DataOutputStream dos = new DataOutputStream(this.socket.getOutputStream());
             dos.writeUTF("LOGOUT");
-            dispose();
-
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            dispose();
         }
     }
 

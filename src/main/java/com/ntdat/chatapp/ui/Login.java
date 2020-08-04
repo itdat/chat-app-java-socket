@@ -5,20 +5,20 @@
  */
 package com.ntdat.chatapp.ui;
 
+import com.ntdat.chatapp.AppConfig;
 import com.ntdat.chatapp.Main;
 import com.ntdat.chatapp.ui.customcomponent.*;
 import com.ntdat.chatapp.utilities.SetTimeOut;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
+import static com.ntdat.chatapp.AppConfig.*;
 import static javax.swing.GroupLayout.*;
 
 public class Login extends RoundedJFrame {
@@ -27,11 +27,13 @@ public class Login extends RoundedJFrame {
     private static final Color DEFAULT_DARK_COLOR = new Color(82, 82, 82, 255);
 
     public Login() {
+        // Init directory
+        File dataDirectory = new File(DATA_DIRECTORY);
+        dataDirectory.mkdirs();
         initComponents();
     }
 
     private void initComponents() {
-
         // =============================== TITLE BAR ===============================
         // Application name
         JLabel txtAppName = new JLabel();
@@ -339,20 +341,18 @@ public class Login extends RoundedJFrame {
             if (username.isEmpty() || password.isEmpty()) {
                 raiseError("<html>Tài khoản hoặc mật khẩu không thể rỗng " + img1 + "</html>");
             } else {
-                // getting localhost ip
                 InetAddress ip = null;
                 try {
-                    ip = InetAddress.getByName("localhost");
+                    ip = InetAddress.getByName(getIpServer());
                 } catch (UnknownHostException e) {
                     e.printStackTrace();
                 }
 
-                // establish the connection
                 Socket s = null;
                 try {
-                    s = new Socket(ip, Main.SERVER_PORT);
+                    s = new Socket(ip, AppConfig.SERVER_PORT);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    raiseError("<html>Server đang bảo trì. Quay lại sau " + img1 + "</html>");
                 }
 
                 try {
@@ -385,8 +385,33 @@ public class Login extends RoundedJFrame {
                     e.printStackTrace();
                 }
             }
-
         });
+    }
+
+    private static String getIpServer() {
+        String ipAddress = "";
+        try {
+            File myObj = new File(IP_CONFIG_FILE);
+            System.out.println(myObj.getAbsolutePath());
+            Scanner myReader = new Scanner(myObj);
+            while (myReader.hasNextLine()) {
+                ipAddress = myReader.nextLine();
+            }
+            myReader.close();
+        } catch (FileNotFoundException e) {
+            System.out.println("ip-config.txt not founded.");
+            initIpConfigFile();
+            System.out.println("Initialized ip-config.txt");
+            ipAddress = DEFAULT_IP_SERVER;
+        } finally {
+            return ipAddress;
+        }
+    }
+
+    public static  void initIpConfigFile() throws IOException {
+        FileWriter myWriter = new FileWriter(IP_CONFIG_FILE);
+        myWriter.write(DEFAULT_IP_SERVER);
+        myWriter.close();
     }
 
     public static void main(String[] args) {
