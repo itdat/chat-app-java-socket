@@ -8,9 +8,12 @@ package com.ntdat.chatapp.ui;
 import com.ntdat.chatapp.AppConfig;
 import com.ntdat.chatapp.Main;
 import com.ntdat.chatapp.ui.customcomponent.*;
+import com.ntdat.chatapp.ui.panels.LoginPanel;
+import com.ntdat.chatapp.ui.panels.MainPanel;
 import com.ntdat.chatapp.utilities.SetTimeOut;
 
 import javax.swing.*;
+import javax.swing.text.GapContent;
 import java.awt.*;
 import java.io.*;
 import java.net.InetAddress;
@@ -19,12 +22,12 @@ import java.net.UnknownHostException;
 import java.util.Scanner;
 
 import static com.ntdat.chatapp.AppConfig.*;
+import static com.ntdat.chatapp.Main.DEFAULT_FONT;
+import static com.ntdat.chatapp.Main.PANEL_BACKGROUND_COLOR;
 import static javax.swing.GroupLayout.*;
 
 public class Login extends RoundedJFrame {
-    // DEFINE VALUES
-    private static final Font DEFAULT_FONT = new Font("Roboto", Font.PLAIN, 18);
-    private static final Color DEFAULT_DARK_COLOR = new Color(82, 82, 82, 255);
+    public static boolean exit = false;
 
     public Login() {
         // Init directory
@@ -96,123 +99,14 @@ public class Login extends RoundedJFrame {
         titleBar.add(btnClose, gbc);
         // =========================================================================
 
-        // =============================== LOGIN FORM ==============================
-        JLabel txtLogin = new JLabel();
-        txtLogin.setFont(new Font("Roboto", Font.BOLD, 36));
-        txtLogin.setForeground(DEFAULT_DARK_COLOR);
-        txtLogin.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        txtLogin.setText("Đăng nhập");
-
-        JLabel txtUsername = new JLabel();
-        txtUsername.setFont(DEFAULT_FONT);
-        txtUsername.setForeground(DEFAULT_DARK_COLOR);
-        txtUsername.setText("Tài khoản");
-
-        edtUsername = new FlatTextInput();
-        edtUsername.setBackground(new Color(240, 240, 240));
-        edtUsername.setFont(DEFAULT_FONT);
-        edtUsername.setForeground(DEFAULT_DARK_COLOR);
-
-        JLabel txtPassword = new JLabel();
-        txtPassword.setFont(DEFAULT_FONT);
-        txtPassword.setForeground(DEFAULT_DARK_COLOR);
-        txtPassword.setText("Mật khẩu");
-
-        edtPassword = new FlatPasswordInput();
-        edtPassword.setBackground(new Color(240, 240, 240));
-        edtPassword.setFont(DEFAULT_FONT);
-        edtPassword.setForeground(DEFAULT_DARK_COLOR);
-
-        txtNotification = new javax.swing.JLabel();
-        txtNotification.setVisible(false);
-        txtNotification.setFont(DEFAULT_FONT);
-        txtNotification.setForeground(new Color(204, 0, 0));
-        txtNotification.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        txtNotification.setText("Lỗi đăng nhập #???");
-
-        JButton btnLogin = new FlatButton();
-        btnLogin.setBackground(new Color(0, 102, 153));
-        btnLogin.setFont(DEFAULT_FONT);
-        btnLogin.setForeground(Color.WHITE);
-        btnLogin.setText("Đăng nhập");
-        btnLogin.setBorder(null);
-
-        JLabel txtGotoRegister = new JLabel();
-        txtGotoRegister.setFont(new Font("Roboto", Font.ITALIC, 16));
-        txtGotoRegister.setForeground(new Color(102, 102, 102));
-        txtGotoRegister.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        txtGotoRegister.setText("Đi đến đăng ký");
-
-        JPanel formLogin = new RoundedPanel(20);
-        formLogin.setBackground(Color.WHITE);
-
-        javax.swing.GroupLayout formLoginLayout;
-        formLoginLayout = new GroupLayout(formLogin);
-        formLogin.setLayout(formLoginLayout);
-
-        GroupLayout.Group horizontalGroup = formLoginLayout.createParallelGroup(Alignment.LEADING)
-                .addGroup(formLoginLayout.createSequentialGroup()
-                        .addGap(30, 30, 30)
-                        .addGroup(formLoginLayout.createParallelGroup(Alignment.LEADING)
-                                .addComponent(txtPassword)
-                                .addComponent(txtUsername)
-                                .addComponent(txtLogin, Alignment.LEADING, DEFAULT_SIZE, 561, Short.MAX_VALUE)
-                                .addComponent(edtUsername, Alignment.LEADING)
-                                .addComponent(edtPassword)
-                                .addComponent(txtNotification, Alignment.LEADING, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(btnLogin, Alignment.LEADING, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(txtGotoRegister, Alignment.LEADING, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGap(30, 30, 30));
-        formLoginLayout.setHorizontalGroup(horizontalGroup);
-
-        GroupLayout.Group verticalGroup = formLoginLayout.createSequentialGroup()
-                .addGap(26, 26, 26)
-                .addComponent(txtLogin, PREFERRED_SIZE, 65, PREFERRED_SIZE)
-                .addGap(26, 26, 26)
-                .addComponent(txtUsername)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(edtUsername, PREFERRED_SIZE, 57, PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(txtPassword)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(edtPassword, PREFERRED_SIZE, 57, PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(txtNotification)
-                .addGap(18, 18, 18)
-                .addComponent(btnLogin, PREFERRED_SIZE, 55, PREFERRED_SIZE)
-                .addGap(36, 36, 36)
-                .addComponent(txtGotoRegister)
-                .addContainerGap(45, Short.MAX_VALUE);
-        formLoginLayout.setVerticalGroup(verticalGroup);
-        // =========================================================================
-
-        // =============================== BACKGROUND ==============================
-        JPanel background = new JPanel();
-        background.setBackground(new Color(30, 34, 82));
-        javax.swing.GroupLayout backgroundLayout = new javax.swing.GroupLayout(background);
-        background.setLayout(backgroundLayout);
-        backgroundLayout.setHorizontalGroup(
-                backgroundLayout.createParallelGroup(Alignment.LEADING)
-                        .addGroup(backgroundLayout.createSequentialGroup()
-                                .addGap(324, 324, Short.MAX_VALUE)
-                                .addComponent(formLogin, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
-                                .addGap(324, 324, Short.MAX_VALUE))
-        );
-        backgroundLayout.setVerticalGroup(
-                backgroundLayout.createParallelGroup(Alignment.LEADING)
-                        .addGroup(backgroundLayout.createSequentialGroup()
-                                .addGap(110, 110, Short.MAX_VALUE)
-                                .addComponent(formLogin, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
-                                .addGap(150, 150, Short.MAX_VALUE))
-        );
-        // =========================================================================
+        JPanel background = new LoginPanel();
 
         // Main jFrame
         BoxLayout boxLayout = new BoxLayout(getContentPane(), BoxLayout.Y_AXIS);
         getContentPane().setLayout(boxLayout);
         getContentPane().add(titleBar);
         getContentPane().add(background);
-
+        getContentPane().setBackground(PANEL_BACKGROUND_COLOR);
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setMinimumSize(new Dimension(1280, 768));
         setSize(new Dimension(1280, 768));
@@ -258,24 +152,6 @@ public class Login extends RoundedJFrame {
                 mouseExitHandle(evt);
             }
         });
-
-        btnLogin.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                executeLogin();
-            }
-        });
-
-        txtGotoRegister.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                gotoRegister();
-            }
-        });
-    }
-
-    private void gotoRegister() {
-        Register register = new Register();
-        register.setVisible(true);
-        dispose();
     }
 
     private void moveFrame(java.awt.event.MouseEvent evt) {
@@ -310,108 +186,8 @@ public class Login extends RoundedJFrame {
     }
 
     private void close() {
+        Login.exit = true;
         dispose();
-    }
-
-    private void raiseError(String message) {
-        txtNotification.setIcon(null);
-        txtNotification.setForeground(new Color(204, 0, 0));
-        txtNotification.setText(message);
-        txtNotification.setVisible(true);
-        SetTimeOut.setTimeout(()-> txtNotification.setVisible(false), 2000);
-    }
-
-    private void showLoading() {
-        txtNotification.setText("");
-        Image spinner = new ImageIcon(this.getClass().getResource("/loader.gif")).getImage();
-        txtNotification.setIcon(new ImageIcon(spinner));
-        txtNotification.setVisible(true);
-        SetTimeOut.setTimeout(()-> txtNotification.setVisible(false), 2000);
-    }
-
-    private void executeLogin() {
-        String username = this.edtUsername.getText();
-        String password = this.edtPassword.getText();
-
-        String img1 = "<img src='" + this.getClass().getResource("/emoji_images/emoji_6.png") + "' width='32' height='32'/>";
-
-        showLoading();
-
-        EventQueue.invokeLater(() -> {
-            if (username.isEmpty() || password.isEmpty()) {
-                raiseError("<html>Tài khoản hoặc mật khẩu không thể rỗng " + img1 + "</html>");
-            } else {
-                InetAddress ip = null;
-                try {
-                    ip = InetAddress.getByName(getIpServer());
-                } catch (UnknownHostException e) {
-                    e.printStackTrace();
-                }
-
-                Socket s = null;
-                try {
-                    s = new Socket(ip, AppConfig.SERVER_PORT);
-                } catch (IOException e) {
-                    raiseError("<html>Server đang bảo trì. Quay lại sau " + img1 + "</html>");
-                }
-
-                try {
-                    DataOutputStream dos = new DataOutputStream(s.getOutputStream());
-                    dos.writeUTF("LOGIN|" + username + "|" + password);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                try {
-                    DataInputStream dis = new DataInputStream(s.getInputStream());
-                    DataOutputStream dos = new DataOutputStream(s.getOutputStream());
-                    String result = dis.readUTF();
-                    switch (result) {
-                        case "LOGIN_SUCCESS":
-                            raiseError("<html>Đăng nhập thành công</html>");
-                            dos.writeUTF("READY");
-                            MainFrame mainFrame = new MainFrame(s, username);
-                            mainFrame.setVisible(true);
-                            dispose();
-                            break;
-                        case "USER_NOT_EXIST":
-                            raiseError("<html>Tên người dùng không tồn tại</html>");
-                            break;
-                        case "WRONG_PASSWORD":
-                            raiseError("<html>Sai mật khẩu</html>");
-                            break;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
-    private static String getIpServer() {
-        String ipAddress = "";
-        try {
-            File myObj = new File(IP_CONFIG_FILE);
-            System.out.println(myObj.getAbsolutePath());
-            Scanner myReader = new Scanner(myObj);
-            while (myReader.hasNextLine()) {
-                ipAddress = myReader.nextLine();
-            }
-            myReader.close();
-        } catch (FileNotFoundException e) {
-            System.out.println("ip-config.txt not founded.");
-            initIpConfigFile();
-            System.out.println("Initialized ip-config.txt");
-            ipAddress = DEFAULT_IP_SERVER;
-        } finally {
-            return ipAddress;
-        }
-    }
-
-    public static  void initIpConfigFile() throws IOException {
-        FileWriter myWriter = new FileWriter(IP_CONFIG_FILE);
-        myWriter.write(DEFAULT_IP_SERVER);
-        myWriter.close();
     }
 
     public static void main(String[] args) {
@@ -420,10 +196,7 @@ public class Login extends RoundedJFrame {
 
     private javax.swing.JPanel btnClose;
     private javax.swing.JPanel btnMinimize;
-    private javax.swing.JTextField edtPassword;
-    private javax.swing.JTextField edtUsername;
     private javax.swing.JLabel txtClose;
-    private javax.swing.JLabel txtNotification;
     private javax.swing.JLabel txtMinimize;
     private int pX;
     private int pY;

@@ -300,7 +300,7 @@ public class ConversationPanel extends JPanel {
                 conversationPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
                         .addComponent(pnlConversationName, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addGroup(conversationPanelLayout.createSequentialGroup()
-                                .addGap(23, 23, 23)
+                                .addGap(25)
                                 .addComponent(icoPickFile)
                                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(icoPickPicture)
@@ -350,7 +350,7 @@ public class ConversationPanel extends JPanel {
                         .addGroup(pnlMainLayout.createSequentialGroup()
                             .addComponent(pnlUsername)
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+//                            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(btnSettings)
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                             .addComponent(btnLogout)))
@@ -366,7 +366,7 @@ public class ConversationPanel extends JPanel {
                         .addComponent(pnlUsername, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE))
                     .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                     .addComponent(pnlConversation, GroupLayout.DEFAULT_SIZE, 609, Short.MAX_VALUE)
-                    .addGap(9, 9, 9)
+                    .addGap(12)
                     .addContainerGap())
         );
 
