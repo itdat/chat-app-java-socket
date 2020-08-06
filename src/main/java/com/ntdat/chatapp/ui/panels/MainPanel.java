@@ -12,6 +12,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Arrays;
@@ -148,16 +149,29 @@ public class MainPanel extends JPanel {
     private void updateOnlineList(List<String> users) {
         // Clear current online list
         onlineList.removeAll();
-
         // Create new online list
         JPanel usersPanel = new JPanel();
         usersPanel.setLayout(new GridBagLayout());
         usersPanel.setOpaque(false);
         for (int i = 0; i < users.size(); i++) {
+            // Create new button
             FlatButton btn = new FlatButton();
             btn.setFont(DEFAULT_FONT);
             btn.setText(users.get(i));
             btn.setPreferredSize(new Dimension(200, 50));
+            // Add mouseClickListener
+            int finalIndex = i;
+            btn.addMouseListener(new MouseAdapter() {
+                public void mouseClicked(MouseEvent e) {
+                    currentRecipient = users.get(finalIndex);
+                    try {
+                        DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+                        dos.writeUTF("GET_CONVERSATION_HISTORY|" + username + "|" + currentRecipient);
+                    } catch (IOException ioException) {
+                        ioException.printStackTrace();
+                    }
+                }
+            });
             gbc.gridy = i;
             usersPanel.add(btn, gbc);
         }
@@ -175,29 +189,21 @@ public class MainPanel extends JPanel {
                     String[] tokens = msg.split("\\|");
                     switch (tokens[0]) {
                         case "UPDATE_ONLINE_LIST":
+                            // "UPDATE_ONLINE_LIST|user1,user2,user3"
                             String[] users = tokens[1].split(",");
                             activeUsers = Arrays.asList(users);
                             updateOnlineList(activeUsers);
                             break;
-//                        case "MESSAGE":
-//                            String message = tokens[1];
-//                            String sender = tokens[2];
-//                            pushHistoryConversation(username, sender, sender+":"+message);
-//                            if (sender.equals(currentRecipient)) {
-//                                pnlConversation.addBubbleChatReceive(message);
-//                                pnlConversation.revalidate();
-//                                pnlConversation.repaint();
-//                            } else {
-////                                for (int i = 0; i < activeUsers.size(); i++) {
-////                                    if (activeUsers.get(i).equals(sender)) {
-////                                        activeUsers.remove(i);
-////                                        break;
-////                                    }
-////                                }
-////                                activeUsers.add(0, sender);
-////                                updateOnlineList(users);
-//                            }
-//                            break;
+                        case "MESSAGE":
+                            // "MESSAGE|message|sender"
+                            String message = tokens[1];
+                            String sender = tokens[2];
+                            if (sender.equals(currentRecipient)) {
+                                pnlConversation.addBubbleChatReceive(message);
+                                pnlConversation.revalidate();
+                                pnlConversation.repaint();
+                            }
+                            break;
 //                        case "MESSAGE_FILE":
 //                            String messageFile = tokens[1];
 //                            String senderFile = tokens[2];
@@ -244,16 +250,23 @@ public class MainPanel extends JPanel {
 //                                }
 //                            }
 //                            break;
-//                        case "CONVERSATION_HISTORY":
-//                            String recipient = tokens[2];
-//                            if (tokens.length == 4) {
-//                                String conversation = tokens[3];
-//                                System.out.println(tokens[3]);
-//                                if (currentRecipient.equals(recipient)) {
-//                                    currentConversation = Arrays.asList(conversation.split("#"));
-//                                }
-//                            }
-//                            break;
+                        case "CONVERSATION_HISTORY":
+                            String conversation = "";
+                            if (tokens.length == 4) {
+                                conversation = tokens[3];
+                            }
+                            currentConversation = Arrays.asList(conversation.split("#"));
+                            pnlMain.removeAll();
+                            pnlConversation = new ConversationPanel(socket, username, currentRecipient);
+                            pnlMain.add(pnlConversation);
+
+                            if (tokens.length == 4) {
+                                loadHistoryConversation(username, currentRecipient);
+                            }
+
+                            pnlMain.revalidate();
+                            pnlMain.repaint();
+                            break;
                         default:
                             break;
                     }
@@ -262,5 +275,32 @@ public class MainPanel extends JPanel {
             }
         });
         readMessage.start();
+    }
+
+    private void loadHistoryConversation(String username, String currentRecipient) {
+        SwingUtilities.invokeLater(() -> {
+            for (String message : currentConversation) {
+                if (message.startsWith(username)) {
+                    if (message.contains("title='file:")) {
+                        pnlConversation.addClickableBubbleChat(message.substring(username.length()+1));
+                    } else {
+                        pnlConversation.addBubbleChat(message.substring(username.length()+1));
+                    }
+                    if (message.startsWith(currentRecipient)) {
+                        if (message.contains("title='file:")) {
+                            pnlConversation.addClickableBubbleChatReceive(message.substring(currentRecipient.length()+1));
+                        } else {
+                            pnlConversation.addBubbleChatReceive(message.substring(currentRecipient.length()+1));
+                        }
+                    }
+                } else {
+                    if (message.contains("title='file:")) {
+                        pnlConversation.addClickableBubbleChatReceive(message.substring(currentRecipient.length()+1));
+                    } else {
+                        pnlConversation.addBubbleChatReceive(message.substring(currentRecipient.length()+1));
+                    }
+                }
+            }
+        });
     }
 }
